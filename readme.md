@@ -1,14 +1,3 @@
-Below is the **FULL updated README** with:
-
-* Slice 1 kept fully (unchanged content preserved).
-* Slice 1 file explanations expanded (“Scenario: how the files dance together”).
-* Added **Slice 2 – Classroom Creation** section (user story, acceptance, data model, new files, manual test sequence, AWS mapping).
-* Nothing removed; only additions + deeper detail where you requested.
-
-Copy–paste this whole thing over your existing `README.md`.
-
----
-
 # Lab4All Backend – Slice 1 (Auth Skeleton) & Slice 2 (Classroom Creation)
 
 > **Status:** *Local only (no AWS yet).* This README documents the **incremental backend build** derived from *Samer’s user stories*—auth first, then classroom creation.
