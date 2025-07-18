@@ -1,23 +1,9 @@
 [
   {
-    "classroomId": "7a2f7f5a-6f6e-4c62-a642-9bb6f0ccd814",
-    "name": "Chemistry 101",
-    "joinCode": "JEB3UP",
-    "teacherId": "938a07da-6ff3-46ba-96c0-7c02a95c822c",
-    "createdAt": "2025-07-18T21:11:58.456Z"
-  },
-  {
-    "classroomId": "9731d18a-6860-45fa-a949-01243dfef944",
-    "name": "Chemistry 201",
-    "joinCode": "B2F3MF",
-    "teacherId": "938a07da-6ff3-46ba-96c0-7c02a95c822c",
-    "createdAt": "2025-07-18T21:22:13.355Z"
-  },
-  {
-    "classroomId": "fd574276-b828-4fca-8456-151e5a5044ff",
-    "name": "validname",
-    "joinCode": "HNJCGP",
-    "teacherId": "938a07da-6ff3-46ba-96c0-7c02a95c822c",
-    "createdAt": "2025-07-18T21:22:40.991Z"
+    "classroomId": "5f1b0fa7-4179-41dd-9262-ee75dfd324b5",
+    "name": "Physics 101",
+    "joinCode": "B4KCFQ",
+    "teacherId": "a3e56f14-a016-46ce-94a5-88e58c872ccf",
+    "createdAt": "2025-07-18T21:56:50.790Z"
   }
 ]

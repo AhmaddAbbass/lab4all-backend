@@ -34,5 +34,9 @@ export const membershipRepo = {
     all.push(membership);
     save(all);
     return membership;
-  }
+  },
+  listByStudent(studentId: string) {
+  const all = load();
+  return all.filter(m => m.studentId === studentId);
+}
 };

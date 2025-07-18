@@ -1,30 +1,16 @@
 [
   {
-    "id": "2e27cc07-cc27-4b14-8081-839e698dd07c",
-    "email": "t1@example.com",
-    "passwordHash": "$2a$10$.sW40q3gObbGBqcDS70DY.AgCaPI6s21tD05G7ohdJ2JVOou9RvkS",
-    "role": "instructor",
-    "createdAt": "2025-07-18T20:47:20.779Z"
-  },
-  {
-    "id": "b3f20b67-b600-46e1-a7fb-21cd446a2791",
-    "email": "s1@example.com",
-    "passwordHash": "$2a$10$VpTsFpC32QgXhUIbCLPCTe8RarbDTOW/VmOWlApYSXeXTW7oDsZZ.",
-    "role": "student",
-    "createdAt": "2025-07-18T20:50:31.016Z"
-  },
-  {
-    "id": "938a07da-6ff3-46ba-96c0-7c02a95c822c",
+    "id": "a3e56f14-a016-46ce-94a5-88e58c872ccf",
     "email": "teach1@example.com",
-    "passwordHash": "$2a$10$N4HRkQqhAg1eRmaR14Za/uk4fjwFK3xrSNKzuroj1pchap6vgzkPa",
+    "passwordHash": "$2a$10$K.tfr37MdBRHV1giGndnAOQSVVgJgTwbZAJC7Jc/g2gir2SURVp/e",
     "role": "instructor",
-    "createdAt": "2025-07-18T20:56:03.314Z"
+    "createdAt": "2025-07-18T21:53:27.158Z"
   },
   {
-    "id": "a0bb996f-bac7-476b-bcbc-cd27716950ab",
+    "id": "b9bd870f-75ea-4818-98c4-91f6587cb4bf",
     "email": "stud1@example.com",
-    "passwordHash": "$2a$10$bXuERZYeY/wiBUckpTr/4eJpgx/fJPwUkSuqM64sJ991j7/E0RQRm",
+    "passwordHash": "$2a$10$btlUvEeXOCclaskTEC2TPOLZ8v7VBfSQC4ael19kQ7dHb33DqrqZu",
     "role": "student",
-    "createdAt": "2025-07-18T20:56:23.894Z"
+    "createdAt": "2025-07-18T21:53:38.432Z"
   }
 ]

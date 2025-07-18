@@ -600,22 +600,7 @@ Will add:
 3. Open a short **DECISIONS** note: `joinCode length=6 uppercase; duplicate names allowed`.
 4. Request: “Give me Slice 3 section” when ready.
 
----
 
-## 12. Roadmap Snapshot (So Far)
-
-| Slice                | Done?  | Core Outcome                              |
-| -------------------- | ------ | ----------------------------------------- |
-| 1 Auth               | ✅      | Users can register/login (local JWT).     |
-| 2 Classroom Create   | ✅      | Instructors create classroom + join code. |
-| 3 Join Classroom     | (next) | Students join; membership persisted.      |
-| 4 List My Classrooms | —      | Fetch classrooms for current user.        |
-| 5 Start Session      | —      | Minimal experiment session state.         |
-| 6 Update Session     | —      | Mutations + optimistic approach.          |
-| 7 End Session        | —      | Summary artifacts.                        |
-| 8 Realtime Base      | —      | Move to polling → subscription later.     |
-
----
 
 **End of current README (Slices 1 & 2).**
 
@@ -744,14 +729,144 @@ Invoke-RestMethod -Method POST -Uri http://localhost:3000/classrooms/join `
 Will gather memberships + classrooms to return student’s classroom list (and optionally teacher’s list). Decision pending: compute via join vs maintain reverse membership items.
 
 ---
-## 12. Roadmap Snapshot (So Far)
+Below is the **Slice 4 – List My Classrooms** markdown chunk.
+Copy/paste it **after** the Slice 3 section in your `README.md`.
+
+---
+
+## Slice 4 – List My Classrooms
+
+**User Story:** *As a logged‑in user I can fetch all classrooms I’m associated with so I can choose one to enter.*
+
+### 1. Acceptance Criteria
+
+| #   | Criterion                                                                    |
+| --- | ---------------------------------------------------------------------------- |
+| AC1 | Endpoint `GET /classrooms/mine` (Bearer JWT required).                       |
+| AC2 | Student → returns classrooms they have joined (via memberships).             |
+| AC3 | Instructor → returns classrooms they created.                                |
+| AC4 | Student items: `classroomId`, `name`, `teacherId`, `joinedAt` (no joinCode). |
+| AC5 | Instructor items: `classroomId`, `name`, `joinCode`, `createdAt`.            |
+| AC6 | Empty array if none.                                                         |
+| AC7 | Unauthorized (no/invalid token) → 401.                                       |
+| AC8 | No duplicate entries; re‑joins don’t create extra membership rows.           |
+
+### 2. Data / Models
+
+No new files. Reuses:
+
+| File               | Usage                                       |
+| ------------------ | ------------------------------------------- |
+| `classrooms.json`  | Source for classroom metadata.              |
+| `memberships.json` | Provides student ↔ classroom relationships. |
+| `models.ts`        | Already defines `Classroom` + `Membership`. |
+
+### 3. Repository Additions
+
+| File             | New Methods                                     |
+| ---------------- | ----------------------------------------------- |
+| `classroomRepo`  | `listByTeacher(teacherId)`, `listByIds(ids[])`. |
+| `membershipRepo` | `listByStudent(studentId)`.                     |
+
+These allow the route to branch logic cleanly per role without scanning everything multiple times (local scale is fine now).
+
+### 4. Route (New Handler)
+
+`GET /classrooms/mine` (added in `routes/classrooms.ts`):
+
+**Behavior:**
+
+| Role       | Logic                                                                           |
+| ---------- | ------------------------------------------------------------------------------- |
+| student    | Gather memberships → fetch corresponding classrooms → map + include `joinedAt`. |
+| instructor | Filter classrooms where `teacherId === userId`; include `joinCode`.             |
+
+Sorting: currently simple descending by `joinedAt` (students) or `createdAt` (instructors) to show newest first.
+
+### 5. Response Examples
+
+**Student (after one join):**
+
+```json
+[
+  {
+    "classroomId": "c123",
+    "name": "Physics 101",
+    "teacherId": "u-teacher-1",
+    "joinedAt": "2025-07-18T21:35:10.512Z"
+  }
+]
+```
+
+**Instructor:**
+
+```json
+[
+  {
+    "classroomId": "c123",
+    "name": "Physics 101",
+    "joinCode": "AB7KQ2",
+    "createdAt": "2025-07-18T21:30:44.001Z"
+  }
+]
+```
+
+**Empty:**
+
+```json
+[]
+```
+
+### 6. Postman Test Flow (Summary)
+
+1. Instructor login → token.
+2. Create classroom → capture `joinCode`.
+3. Instructor `GET /classrooms/mine` → array ≥1 (with `joinCode`).
+4. Student login (has joined none yet).
+5. Student `GET /classrooms/mine` → `[]`.
+6. Student `POST /classrooms/join` (Slice 3).
+7. Student `GET /classrooms/mine` → array contains classroom (no `joinCode`).
+8. Unauthorized request (no header) → 401.
+
+> Full scripted tests already in Postman collection (see Slice 4 test section); only summary here.
+
+### 7. Slice 4 Checklist
+
+| Item                                    | ✓ |
+| --------------------------------------- | - |
+| Student sees joined classrooms only     |   |
+| Instructor sees created classrooms only |   |
+| Student items exclude `joinCode`        |   |
+| Instructor items include `joinCode`     |   |
+| Empty case returns `[]`                 |   |
+| Unauthorized blocked (401)              |   |
+| No duplicate membership rows            |   |
+
+### 8. AWS / Dynamo Mapping (Forward Plan)
+
+| Local Pattern                                      | Dynamo / AppSync Strategy                                                                                                |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Student listing builds via `memberships.json` scan | Maintain reverse membership items: `PK=USER#<studentId> SK=CLASS#<classId>` → single `Query` per student.                |
+| Instructor listing filters by `teacherId`          | Either GSI on `teacherId` (`GSI1PK=TEACHER#id`) **or** insert “teacher index” item `PK=TEACHER#<id> SK=CLASS#<classId>`. |
+| Sorting in memory                                  | Store timestamps in SK or as attributes; client sorts after query.                                                       |
+| Hiding joinCode from students                      | Resolver conditional projection (omit attribute if role=student).                                                        |
+
+### 9. Open Questions
+
+| Topic                             | Current Choice     | Revisit?                              |
+| --------------------------------- | ------------------ | ------------------------------------- |
+| Reverse membership duplication    | Not stored locally | Yes (mandatory for Dynamo efficiency) |
+| Instructor sees membership counts | Not yet            | Later analytics slice                 |
+| Pagination                        | Not needed yet     | Add when class count grows            |
+
+## Roadmap Snapshot (So Far)
 
 | Slice                | Done?  | Core Outcome                              |
 | -------------------- | ------ | ----------------------------------------- |
 | 1 Auth               | ✅      | Users can register/login (local JWT).     |
 | 2 Classroom Create   | ✅      | Instructors create classroom + join code. |
 | 3 Join Classroom     | ✅ | Students join; membership persisted.      |
-| 4 List My Classrooms | —      | Fetch classrooms for current user.        |
+| 4 List My Classrooms | ✅      | Fetch classrooms for current user.        |
 | 5 Start Session      | —      | Minimal experiment session state.         |
 | 6 Update Session     | —      | Mutations + optimistic approach.          |
 | 7 End Session        | —      | Summary artifacts.                        |

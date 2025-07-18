@@ -46,5 +46,17 @@ export const classroomRepo = {
   findById(id: string): Classroom | undefined {
     const all = load();
     return all.find(c => c.classroomId === id);
-  }
+  },
+  listByTeacher(teacherId: string) {
+  const all = load();
+  return all.filter(c => c.teacherId === teacherId);
+},
+
+listByIds(ids: string[]) {
+  if (!ids.length) return [];
+  const set = new Set(ids);
+  const all = load();
+  return all.filter(c => set.has(c.classroomId));
+}
+
 };
