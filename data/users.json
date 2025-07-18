@@ -1,0 +1,30 @@
+[
+  {
+    "id": "2e27cc07-cc27-4b14-8081-839e698dd07c",
+    "email": "t1@example.com",
+    "passwordHash": "$2a$10$.sW40q3gObbGBqcDS70DY.AgCaPI6s21tD05G7ohdJ2JVOou9RvkS",
+    "role": "instructor",
+    "createdAt": "2025-07-18T20:47:20.779Z"
+  },
+  {
+    "id": "b3f20b67-b600-46e1-a7fb-21cd446a2791",
+    "email": "s1@example.com",
+    "passwordHash": "$2a$10$VpTsFpC32QgXhUIbCLPCTe8RarbDTOW/VmOWlApYSXeXTW7oDsZZ.",
+    "role": "student",
+    "createdAt": "2025-07-18T20:50:31.016Z"
+  },
+  {
+    "id": "938a07da-6ff3-46ba-96c0-7c02a95c822c",
+    "email": "teach1@example.com",
+    "passwordHash": "$2a$10$N4HRkQqhAg1eRmaR14Za/uk4fjwFK3xrSNKzuroj1pchap6vgzkPa",
+    "role": "instructor",
+    "createdAt": "2025-07-18T20:56:03.314Z"
+  },
+  {
+    "id": "a0bb996f-bac7-476b-bcbc-cd27716950ab",
+    "email": "stud1@example.com",
+    "passwordHash": "$2a$10$bXuERZYeY/wiBUckpTr/4eJpgx/fJPwUkSuqM64sJ991j7/E0RQRm",
+    "role": "student",
+    "createdAt": "2025-07-18T20:56:23.894Z"
+  }
+]
