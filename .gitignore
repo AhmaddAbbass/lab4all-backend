@@ -1,31 +1,25 @@
-# Dependencies
+# Node.js stuff
 node_modules/
-
-# Build artefacts
 dist/
-build/
-coverage/
-*.tsbuildinfo
+.serverless/
+.info/
 
-# Env / secrets
+# Env and config
 .env
-.env.*
-!.env.example
+*.local
+*.env.*
 
-# Logs & debug
+# TS + IDE junk
+*.log
+*.tsbuildinfo
+.DS_Store
+.vscode/
+temp/
+undefined/
+temp/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-*.log
 
-# OS / editor
-.DS_Store
-Thumbs.db
-.idea/
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-
-# Misc
-tmp/
+# Optional: VS Code workspace history or lockfiles
+package-lock.json

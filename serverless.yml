@@ -1,0 +1,47 @@
+service: lab4all-auth
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  environment:
+    USER_POOL_ID: us-east-1_H98uAiglK
+    CLIENT_ID:   2k3729eh2gm42prsp0siarg0e7
+
+functions:
+  signup:
+    handler: dist/index.signupHandler
+    events:
+      - http:
+          path: auth/register
+          method: post
+          cors: true
+
+  login:
+    handler: dist/index.loginHandler
+    events:
+      - http:
+          path: auth/login
+          method: post
+          cors: true
+
+  profile:
+    handler: dist/index.profileHandler
+    events:
+      - http:
+          path: auth/profile
+          method: get
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            userPoolArn: arn:aws:cognito-idp:us-east-1:${self:provider.environment.USER_POOL_ID}
+  confirm:
+    handler: dist/index.confirmHandler
+    events:
+      - http:
+          path: auth/confirm
+          method: post
+          cors: true
+
+plugins:
+  - serverless-offline
