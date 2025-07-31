@@ -11,6 +11,7 @@ export const profileHandler: APIGatewayProxyHandler = async (event) => {
   }
 
   // pick out the fields you care about
+  console.log(claims.sub); 
   const userProfile = {
     userId: claims.sub,
     email:  claims.email,

@@ -16,7 +16,10 @@ const bodySchema = z.object({
 
 export const signupHandler: APIGatewayProxyHandler = async (event) => {
   // bodySchema.safeParse  will check if the body match the expected schema haha
+    console.log('EVENT:', JSON.stringify(event, null, 2));
+
   const parsed = bodySchema.safeParse(JSON.parse(event.body || '{}'));
+  console.log('PARSED:', JSON.stringify(parsed, null, 2));
   if (!parsed.success) {
     return {
       statusCode: 400,
@@ -52,7 +55,8 @@ export const signupHandler: APIGatewayProxyHandler = async (event) => {
       body: JSON.stringify({ message: 'Signup successful' }),
     };
   } catch (err: any) {
-
+    console.error('Signup error:', err);
+    // Handling specific Cognito errors is needed here 
     return {
       statusCode: 400,
       body: JSON.stringify({

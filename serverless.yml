@@ -6,7 +6,7 @@ provider:
   region: us-east-1
   environment:
     USER_POOL_ID: us-east-1_H98uAiglK
-    CLIENT_ID:   2k3729eh2gm42prsp0siarg0e7
+    CLIENT_ID: 2k3729eh2gm42prsp0siarg0e7
 
 functions:
   signup:
