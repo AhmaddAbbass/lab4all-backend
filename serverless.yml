@@ -43,5 +43,46 @@ functions:
           method: post
           cors: true
 
+  #classroom lambda functions
+  createClassroom:
+    handler: dist/index.createClassroomHandler
+    events:
+      - http:
+          path: classroom/create
+          method: post
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            userPoolArn: arn:aws:cognito-idp:us-east-1:${self:provider.environment.USER_POOL_ID}
+  joinClassroom:
+    handler: dist/index.joinClassroomHandler
+    events:
+      - http:
+          path: classroom/join
+          method: post
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            userPoolArn: arn:aws:cognito-idp:us-east-1:${self:provider.environment.USER_POOL_ID}
+  getClassrooms:
+    handler: dist/index.getClassroomsHandler
+    events:
+      - http:
+          path: classroom/list 
+          method: get
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            userPoolArn: arn:aws:cognito-idp:us-east-1:${self:provider.environment.USER_POOL_ID}
+  getMembers:
+    handler: dist/index.getMembersHandler
+    events:
+      - http:
+          path: classroom/members
+          method: get
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            userPoolArn: arn:aws:cognito-idp:us-east-1:${self:provider.environment.USER_POOL_ID}
 plugins:
   - serverless-offline
