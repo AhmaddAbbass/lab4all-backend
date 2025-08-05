@@ -1,6 +1,6 @@
 // utils/dynamoInsert.ts
 import { dobClient } from './dynamo';
-import { Classroom, ClassroomSchema } from '../schemas/classroom';
+import { Classroom, ClassroomSchema } from '../../schemas/classroom';
 
 export const insertClassroomRecord = async (input: unknown): Promise<void> => {
   const result = ClassroomSchema.safeParse(input);

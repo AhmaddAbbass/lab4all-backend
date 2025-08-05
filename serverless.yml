@@ -65,10 +65,10 @@ functions:
             type: COGNITO_USER_POOLS
             userPoolArn: arn:aws:cognito-idp:us-east-1:${self:provider.environment.USER_POOL_ID}
   getClassrooms:
-    handler: dist/index.getClassroomsHandler
+    handler: dist/index.getMyClassroomsHandler
     events:
       - http:
-          path: classroom/list 
+          path: classroom/list
           method: get
           cors: true
           authorizer:
@@ -79,7 +79,7 @@ functions:
     events:
       - http:
           path: classroom/members
-          method: get
+          method: post
           cors: true
           authorizer:
             type: COGNITO_USER_POOLS

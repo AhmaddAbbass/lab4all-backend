@@ -8,5 +8,5 @@ export { confirmHandler } from './handlers/auth/confirm';
 // classroom functions 
 export { createClassroomHandler } from './handlers/classroom/create';
 export { joinClassroomHandler } from './handlers/classroom/join';
-export { getClassroomsHandler } from './handlers/classroom/getClassrooms';
+export { getMyClassroomsHandler } from './handlers/classroom/getClassrooms';
 export { getMembersHandler } from './handlers/classroom/getMembers';

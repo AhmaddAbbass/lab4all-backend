@@ -1,9 +1,9 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { v4 as uuidv4 } from 'uuid';
 import { ClassroomSchema } from '../../schemas/classroom';
-import { insertClassroomRecord } from '../../utils/insertClassroom';
-import { generateJoinCode } from '../../utils/generateJoinCode';
-import { insertMembershipRecord } from "../../utils/insertMembership";
+import { insertClassroomRecord } from '../../utils/database/insertClassroom';
+import { generateJoinCode } from '../../utils/other/generateJoinCode';
+import { insertMembershipRecord } from "../../utils/database/insertMembership";
 /**
  * POST /classrooms/create
  *
