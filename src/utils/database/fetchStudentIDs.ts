@@ -1,3 +1,4 @@
+//fetchStudentIDs
 import { dobClient } from './dynamo'; // from your v2 SDK setup
 
 export const getStudentIDsByClassroom = async (classroomId: string): Promise<string[]> => {
@@ -18,7 +19,7 @@ export const getStudentIDsByClassroom = async (classroomId: string): Promise<str
 
     // Only keep items where SK starts with 'USER#'
     return data.Items
-      .filter(item => item.SK.startsWith('USER#'))
+      .filter(item => item.SK.startsWith('USER#') && item.role === 'student')
       .map(item => item.SK.replace('USER#', ''));
   } catch (err) {
     console.error('Error querying student IDs:', err);

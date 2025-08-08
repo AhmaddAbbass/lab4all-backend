@@ -17,7 +17,7 @@ export const insertClassroomRecord = async (input: unknown): Promise<void> => {
     await dobClient.put({
       TableName: 'classrooms',
       Item: classroom,
-      ConditionExpression: 'attribute_not_exists(classroomId)', // ensures no overwrite 
+      ConditionExpression: 'attribute_not_exists(classroomID)', // ensures no overwrite 
 
     }).promise();
       console.log('Step 3b – Dynamo put() returned');                   // <─ NEW
