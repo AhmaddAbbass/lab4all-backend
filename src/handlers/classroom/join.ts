@@ -1,5 +1,5 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
-import z from 'zod';
+import {z} from 'zod';
 import { getClassroomByJoinCode } from '../../utils/database/fetchClassroomByJC';
 import { insertMembershipRecord} from '../../utils/database/insertMembership';
 import { getMembershipRecord } from '../../utils/database/fetchMembership';

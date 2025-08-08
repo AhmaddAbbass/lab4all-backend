@@ -42,7 +42,45 @@ export const fetchStudentInfo = async (studentId: string): Promise<StudentInfo |
       role: attrs['custom:role'] || '',
     };
   } catch (err) {
-    console.error(`Error fetching user ${studentId}:`, err);
-    return null;
+    try {
+      const listed = await cognito.listUsers({
+        UserPoolId: USER_POOL_ID,
+        Filter: `sub = "${studentId}"`,
+        Limit: 1,
+      }).promise();
+
+      const username = listed.Users?.[0]?.Username;
+      if (!username) {
+        console.error(`Error fetching user ${studentId}:`, err);
+        return null;
+      }
+
+      const data = await cognito.adminGetUser({
+        UserPoolId: USER_POOL_ID,
+        Username: username,
+      }).promise();
+
+      const attrs = data.UserAttributes?.reduce((acc, attr) => {
+      if (attr.Name && attr.Value) {
+          acc[attr.Name] = attr.Value;
+      }
+      return acc;
+      }, {} as Record<string, string>);
+
+      if (!attrs) return null;
+
+      return {
+        id: studentId,
+        email: attrs['email'] || '',
+        firstName: attrs['given_name'] || '',
+        lastName: attrs['family_name'] || '',
+        school: attrs['custom:school'] || '',
+        grade: attrs['custom:grade'] || '',
+        role: attrs['custom:role'] || '',
+      };
+    } catch (err2) {
+      console.error(`Error fetching user ${studentId}:`, err2);
+      return null;
+    }
   }
 };
