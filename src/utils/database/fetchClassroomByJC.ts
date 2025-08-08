@@ -1,3 +1,4 @@
+//fetchClassroomByJC
 import { dobClient } from './dynamo';
 
 export const getClassroomByJoinCode = async (joinCode: string) => {

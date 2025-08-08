@@ -1,0 +1,149 @@
+Perfect—got your files. I’ll keep it beginner-friendly, chunked, and we’ll pause after this so you can send the next file(s).
+
+# `serverless.yml` — what each part does
+
+## 1) `service: lab4all-auth`
+
+* **What:** Names your project inside the Serverless Framework.
+* **Why:** Helps Serverless label your stack on AWS (useful for deploying/tearing down).
+* **How it connects:** Everything below belongs to this service.
+
+## 2) `provider` (AWS + Node)
+
+```yaml
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  environment:
+    USER_POOL_ID: us-east-1_H98uAiglK
+    CLIENT_ID: 2k3729eh2gm42prsp0siarg0e7
+```
+
+* **What:** Chooses AWS, Node.js 18, and default region. `environment` defines environment variables.
+* **Why:**
+
+  * *Runtime* tells AWS which Node version to run your Lambdas with.
+  * *Environment vars* become `process.env.USER_POOL_ID` and `process.env.CLIENT_ID` inside your code (handy for Cognito).
+* **How it connects:** Handlers that talk to Cognito read these values. Region controls where Lambdas and API Gateway live.
+
+## 3) `functions` (your HTTP endpoints → Lambda handlers)
+
+Each block maps an HTTP route to a compiled function export in `dist/index.js`.
+
+Example (signup):
+
+```yaml
+signup:
+  handler: dist/index.signupHandler
+  events:
+    - http:
+        path: auth/register
+        method: post
+        cors: true
+```
+
+* **What:**
+
+  * `handler: dist/index.signupHandler` means “load file `dist/index.js`, and call the named export `signupHandler`.”
+  * `events.http` wires an API Gateway route (`POST /auth/register`) to that handler.
+  * `cors: true` adds CORS headers so browsers can call your API from a different origin.
+* **Why:** This is how Serverless exposes your functions over HTTP without you managing servers.
+* **How it connects:** Your `src/index.ts` *re-exports* each handler so they exist as named exports in the compiled `dist/index.js`.
+
+You repeat this for:
+
+* **Auth:** `signup`, `login`, `profile` (GET), `confirm`
+* **Classroom:** `createClassroom`, `joinClassroom`, `getClassrooms`, `getMembers`
+
+## 4) `authorizer` (protecting routes with Cognito)
+
+You added a Cognito User Pool authorizer on most routes (e.g., `profile`, `classroom/*`):
+
+```yaml
+authorizer:
+  type: COGNITO_USER_POOLS
+  userPoolArn: arn:aws:cognito-idp:us-east-1:${self:provider.environment.USER_POOL_ID}
+```
+
+* **What:** Requires a valid JWT (ID/Access token) from your Cognito User Pool to call the endpoint.
+* **Why:** Locks down routes to signed-in users (e.g., viewing profile, creating/joining classrooms).
+* **How it connects:** The client includes `Authorization: Bearer <JWT>`; API Gateway verifies it against your user pool, then invokes the Lambda.
+
+> ⚠️ **Fix this ARN**
+> The ARN format needs both the **AWS account ID** and the **`userpool/`** segment. Right now it’s missing both. Use this instead:
+
+```yaml
+authorizer:
+  type: COGNITO_USER_POOLS
+  userPoolArn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+```
+
+This works everywhere you used `authorizer`.
+
+## 5) `plugins`
+
+```yaml
+plugins:
+  - serverless-offline
+```
+
+* **What:** Lets you run the API locally.
+* **Why:** Fast dev loop: `npx serverless offline` (or `sls offline`) spins up `http://localhost:3000`.
+* **How it connects:** You’ll still need your TypeScript compiled to `dist/` before running.
+
+## 6) ✅ Permissions you likely still need (quick checklist)
+
+Not present yet in `serverless.yml`, but your code will probably require:
+
+* **DynamoDB** (reads/writes): `dynamodb:GetItem`, `Query`, `PutItem`, etc.
+* **Cognito** (if you use *admin* APIs): `cognito-idp:Admin*` actions.
+  If you stick to **non-admin** APIs like `SignUp`, `ConfirmSignUp`, `InitiateAuth`, you can permit those explicitly.
+  Add under `provider.iamRoleStatements` later—we’ll confirm once we see DB/userpool utils.
+
+---
+
+# `src/index.ts` — the “barrel” of exports
+
+```ts
+// auth functions
+export { signupHandler }  from './handlers/auth/signup';
+export { loginHandler }   from './handlers/auth/login';
+export { profileHandler } from './handlers/auth/profile';
+export { confirmHandler } from './handlers/auth/confirm';
+
+// classroom functions
+export { createClassroomHandler } from './handlers/classroom/create';
+export { joinClassroomHandler }   from './handlers/classroom/join';
+export { getMyClassroomsHandler } from './handlers/classroom/getClassrooms';
+export { getMembersHandler }      from './handlers/classroom/getMembers';
+```
+
+* **What:** Re-exports each Lambda handler from its file. This is often called a **barrel file**.
+* **Why this syntax:**
+
+  * Using **named exports** (`export { foo } from '...'`) makes those names available on the compiled module object.
+  * Serverless expects the pattern `filePath.exportName` → `dist/index.signupHandler`.
+* **How it connects:** Your TypeScript compiler outputs `dist/index.js`. Serverless loads that file and calls each named export when the matching HTTP route is hit.
+* **Why it’s necessary:** It centralizes your entry points so `serverless.yml` only ever points at `dist/index.<name>`. Cleaner than pointing each function at a different file.
+
+> Small build tip: make sure `tsconfig.json` sets `outDir` to `dist`, and that your `package.json` has a `build` script (e.g., `"build": "tsc"`). Run `npm run build` before `sls offline` or `sls deploy`.
+
+---
+
+# How these two files work together (runtime flow)
+
+1. You compile TS → JS into `dist/`.
+2. API Gateway receives a request (e.g., `POST /auth/login`).
+3. If the route has an authorizer, API Gateway verifies the JWT with Cognito first.
+4. Serverless/AWS loads `dist/index.js` and invokes the matching export (e.g., `loginHandler`).
+5. Your handler uses env vars (`process.env.CLIENT_ID`, etc.), calls Cognito/DynamoDB, and returns JSON.
+
+---
+
+Want me to:
+
+* patch the `userPoolArn` for all routes right now (I can give you a drop-in block), and
+* quickly verify your `tsconfig.json` and `package.json` build scripts?
+
+If yes, paste those next—or we can jump into the first handler (`src/handlers/auth/signup.ts`) for a line-by-line breakdown. Your call.

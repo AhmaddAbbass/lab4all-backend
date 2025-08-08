@@ -1,4 +1,4 @@
-// utils/dynamoInsert.ts
+// insertClassroom
 import { dobClient } from './dynamo';
 import { Classroom, ClassroomSchema } from '../../schemas/classroom';
 

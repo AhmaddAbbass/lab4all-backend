@@ -5,7 +5,7 @@ import { insertClassroomRecord } from '../../utils/database/insertClassroom';
 import { generateJoinCode } from '../../utils/other/generateJoinCode';
 import { insertMembershipRecord } from "../../utils/database/insertMembership";
 /**
- * POST /classrooms/create
+ * POST /classroom/create
  *
  * Creates a new classroom.
  *
@@ -78,7 +78,7 @@ export const createClassroomHandler: APIGatewayProxyHandler = async (event) => {
     school: body.school,
     createdAt: new Date().toISOString(),
     teacherId: userProfile.userId,
-    teacherName: claims['given_name'] +' '+claims['family_name'] ,
+    teacherName: claims['given_name'] +' '+ claims['family_name'] ,
     joinCode: generateJoinCode(),
   };
 

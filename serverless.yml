@@ -7,6 +7,25 @@ provider:
   environment:
     USER_POOL_ID: us-east-1_H98uAiglK
     CLIENT_ID: 2k3729eh2gm42prsp0siarg0e7
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:Query
+        - dynamodb:TransactWriteItems
+      Resource:
+        - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/classrooms
+        - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/classrooms/index/joinCode-index
+        - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/memberships
+    - Effect: Allow
+      Action:
+        - cognito-idp:SignUp
+        - cognito-idp:ConfirmSignUp
+        - cognito-idp:InitiateAuth
+        - cognito-idp:AdminGetUser
+        - cognito-idp:ListUsers       # needed for sub→username resolution
+      Resource: "*"
 
 functions:
   signup:
@@ -34,7 +53,8 @@ functions:
           cors: true
           authorizer:
             type: COGNITO_USER_POOLS
-            userPoolArn: arn:aws:cognito-idp:us-east-1:${self:provider.environment.USER_POOL_ID}
+            userPoolArn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+
   confirm:
     handler: dist/index.confirmHandler
     events:
@@ -43,7 +63,6 @@ functions:
           method: post
           cors: true
 
-  #classroom lambda functions
   createClassroom:
     handler: dist/index.createClassroomHandler
     events:
@@ -53,7 +72,8 @@ functions:
           cors: true
           authorizer:
             type: COGNITO_USER_POOLS
-            userPoolArn: arn:aws:cognito-idp:us-east-1:${self:provider.environment.USER_POOL_ID}
+            userPoolArn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+
   joinClassroom:
     handler: dist/index.joinClassroomHandler
     events:
@@ -63,7 +83,8 @@ functions:
           cors: true
           authorizer:
             type: COGNITO_USER_POOLS
-            userPoolArn: arn:aws:cognito-idp:us-east-1:${self:provider.environment.USER_POOL_ID}
+            userPoolArn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+
   getClassrooms:
     handler: dist/index.getMyClassroomsHandler
     events:
@@ -73,7 +94,8 @@ functions:
           cors: true
           authorizer:
             type: COGNITO_USER_POOLS
-            userPoolArn: arn:aws:cognito-idp:us-east-1:${self:provider.environment.USER_POOL_ID}
+            userPoolArn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+
   getMembers:
     handler: dist/index.getMembersHandler
     events:
@@ -83,6 +105,7 @@ functions:
           cors: true
           authorizer:
             type: COGNITO_USER_POOLS
-            userPoolArn: arn:aws:cognito-idp:us-east-1:${self:provider.environment.USER_POOL_ID}
+            userPoolArn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+
 plugins:
   - serverless-offline

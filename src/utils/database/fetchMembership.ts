@@ -1,3 +1,5 @@
+// fetchMembership
+
 import { dobClient } from './dynamo';
 
 export const getMembershipRecord = async (PK: string, SK: string) => {

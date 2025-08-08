@@ -1,0 +1,420 @@
+Alright—big picture first, then we’ll zoom in. I’ll keep jargon defined as we go and show small code snippets where it helps.
+
+# 1) A simple metaphor
+
+Think of your system like a **school front desk**:
+
+* **API Gateway** is the **front door** with a receptionist who checks IDs.
+* **Cognito** is the **ID office** that issues and verifies student/teacher IDs (login/signup/confirm).
+* **Lambda handlers** are the **staff at different counters** (register, login, create class, join class).
+* **DynamoDB** is the **filing cabinet** where classroom records and membership lists are stored.
+* **Zod** is the **form checker** ensuring people filled their forms correctly before you file them.
+
+# 2) High-Level Architecture Overview
+
+* **Goal:** Provide a serverless backend for a virtual lab/classroom app where users (students/instructors) can sign up, log in, view their profile, create/join classrooms, list their classrooms, and see class members.
+
+* **Main components:**
+
+  * **AWS API Gateway**: HTTP endpoints (e.g., `POST /auth/login`).
+  * **AWS Lambda (Node.js/TypeScript)**: Your code that runs per request.
+  * **AWS Cognito (User Pool)**: User accounts, tokens (JWTs), custom attributes.
+  * **AWS DynamoDB**: Two tables:
+
+    * `classrooms` (by `classroomID`, plus a **GSI** on `joinCode`)
+    * `memberships` (single-table style with composite keys `PK`, `SK`)
+  * **Serverless Framework**: Wiring, deploys, local dev.
+  * **Zod**: Validates incoming JSON and DB shapes.
+
+* **Request flow (typical protected route):**
+
+  1. Client calls an endpoint (e.g., `POST /classroom/create`) with `Authorization: Bearer <JWT>`.
+  2. **API Gateway** verifies the JWT with **Cognito** (authorizer).
+  3. **Lambda handler** runs. It:
+
+     * reads user claims from `event.requestContext.authorizer.claims`
+     * validates the request body with **Zod**
+     * reads/writes **DynamoDB** using small **utils**
+     * returns JSON
+
+# 3) File Structure & Organization
+
+* **Root**
+
+  * `serverless.yml`: Declares functions, routes, region, env vars, (add IAM later).
+  * `package.json` / `tsconfig.json`: deps, build config.
+  * `.vscode/*`: editor settings.
+  * `info/*`: your notes (handy onboarding).
+
+* **`src/index.ts` (entry hub)**
+
+  * Re-exports each handler as a **named export** so Serverless can call `dist/index.<name>`.
+
+  ```ts
+  export { signupHandler } from './handlers/auth/signup';
+  // ...
+  export { createClassroomHandler } from './handlers/classroom/create';
+  ```
+
+* **`src/handlers/*` (Lambda entry points)**
+
+  * **`auth/`**: `signup`, `confirm`, `login`, `profile`
+  * **`classroom/`**: `create`, `join`, `getClassrooms`, `getMembers`
+  * Each file exports one `APIGatewayProxyHandler` function.
+
+* **`src/schemas/*` (data shapes with Zod)**
+
+  * `classroom.ts`, `membership.ts`
+  * Ensures you only write/read expected shapes.
+
+* **`src/utils/*` (shared helpers)**
+
+  * **`database/`**: Dynamo client + CRUD helpers (insert/fetch/query).
+  * **`other/generateJoinCode.ts`**: makes join codes.
+  * **`userpool/fetchStudentInfo.ts`**: reads user info from Cognito.
+
+# 4) Use Case Breakdown (end-to-end)
+
+I’ll cover each feature with: trigger → files → step-by-step → data passed.
+
+## A) Sign up
+
+* **Trigger:** User submits signup form.
+* **Files involved:**
+  `serverless.yml` (route) → `index.ts` (export) → `handlers/auth/signup.ts` → Cognito
+* **Flow:**
+
+  1. `POST /auth/register` hits `signupHandler`.
+  2. Parse JSON and **Zod-validate**:
+
+     ```ts
+     const bodySchema = z.object({
+       email: z.string().email(),
+       password: z.string().min(8),
+       firstName: z.string(),
+       lastName: z.string(),
+       school: z.string(),
+       role: z.enum(['student','instructor']),
+       grade: z.string(),
+     });
+     ```
+  3. Call **Cognito** `signUp({ ClientId, Username: email, Password, UserAttributes: [...] })`.
+  4. Return `200` if accepted (user then needs to confirm).
+* **Data passed:**
+
+  * Request: user info
+  * To Cognito: standard and **custom** attributes (`custom:school`, `custom:role`, `custom:grade`)
+
+## B) Confirm account
+
+* **Trigger:** User enters the 6-digit code sent by email/SMS.
+* **Files involved:** `handlers/auth/confirm.ts`
+* **Flow:**
+
+  1. `POST /auth/confirm` → validate `{ email, code }`.
+  2. Call **Cognito** `confirmSignUp({ ClientId, Username: email, ConfirmationCode: code })`.
+  3. Return success.
+* **Data passed:** email + code → Cognito.
+
+## C) Login
+
+* **Trigger:** User submits email/password.
+* **Files involved:** `handlers/auth/login.ts`
+* **Flow:**
+
+  1. `POST /auth/login` → validate `{ email, password }`.
+  2. Call **Cognito** `initiateAuth({ AuthFlow: 'USER_PASSWORD_AUTH', ClientId, AuthParameters })`.
+  3. Return tokens: `{ IdToken, AccessToken, RefreshToken, ExpiresIn }`.
+* **Data passed:** credentials → tokens back.
+
+## D) Profile (who am I?)
+
+* **Trigger:** Client requests user profile after login.
+* **Files involved:** `serverless.yml` (authorizer enabled), `handlers/auth/profile.ts`
+* **Flow:**
+
+  1. `GET /auth/profile` with `Authorization: Bearer <IdToken>`.
+  2. **API Gateway** validates JWT, injects `claims` into the request.
+  3. Handler reads:
+
+     ```ts
+     const claims = (event.requestContext.authorizer as any)?.claims;
+     const profile = {
+       userId: claims.sub,
+       email: claims.email,
+       role: claims['custom:role'],
+       school: claims['custom:school'],
+       grade: claims['custom:grade'],
+     };
+     ```
+  4. Returns profile from **token**, no DB call needed.
+
+## E) Create classroom (instructor only)
+
+* **Trigger:** Instructor creates a new class.
+* **Files involved:**
+  `handlers/classroom/create.ts` → `schemas/classroom.ts` → `utils/other/generateJoinCode.ts` → `utils/database/insertClassroom.ts` + `insertMembership.ts`
+* **Flow:**
+
+  1. Auth guard: require JWT, ensure `claims['custom:role'] === 'instructor'`.
+  2. Parse body `{ classroomName, school }`.
+  3. Build record:
+
+     ```ts
+     const classroom = {
+       classroomID: uuidv4(),
+       classroomName: body.classroomName,
+       school: body.school,
+       createdAt: new Date().toISOString(),
+       teacherId: claims.sub, // see note on IDs below
+       teacherName: claims['given_name'] + ' ' + claims['family_name'],
+       joinCode: generateJoinCode(),
+     };
+     ```
+  4. **Zod-validate** with `ClassroomSchema`.
+  5. Write to **DynamoDB** `classrooms` table.
+  6. Create **two membership** rows in `memberships`:
+
+     ```txt
+     PK=USER#<teacherId>     SK=CLASSROOM#<classroomID>  role='instructor'
+     PK=CLASSROOM#<classID>  SK=USER#<teacherId>         role='instructor'
+     ```
+  7. Return `201` with `classroomID`.
+
+## F) Join classroom (student)
+
+* **Trigger:** Student enters a join code.
+* **Files involved:**
+  `handlers/classroom/join.ts` → `utils/database/fetchClassroomByJC.ts` → `schemas/membership.ts` → `utils/database/insertMembership.ts`
+* **Flow:**
+
+  1. Auth guard: require JWT.
+  2. Validate body `{ joinCode }`.
+  3. **Query GSI** on `classrooms` by `joinCode` → get `classroomID`.
+  4. Check membership exists:
+
+     ```ts
+     await getMembershipRecord(`USER#${userId}`, `CLASSROOM#${classroomID}`)
+     ```
+  5. If not exists, add **two** membership rows (role: `student`).
+  6. Return success.
+
+## G) List my classrooms
+
+* **Trigger:** Any user clicks “My classrooms.”
+* **Files involved:** `handlers/classroom/getClassrooms.ts` → `utils/database/fetchClassroomIDs.ts` → `fetchClassroomByID.ts`
+* **Flow:**
+
+  1. JWT → `userId = claims.sub`.
+  2. Query `memberships` with `PK=USER#<userId>` → collect all `CLASSROOM#...` IDs.
+  3. For each ID, **GetItem** from `classrooms` table.
+  4. Return the list (optionally omit `teacherId`).
+
+## H) List members of a classroom
+
+* **Trigger:** Instructor (or member) opens “Members” tab.
+* **Files involved:**
+  `handlers/classroom/getMembers.ts` → `utils/database/fetchStudentIDs.ts` → `utils/userpool/fetchStudentInfo.ts`
+* **Flow:**
+
+  1. JWT + body `{ classroomID }`.
+  2. Query `memberships` with `PK=CLASSROOM#<classroomID>` → `USER#...` items.
+  3. For each user ID, call **Cognito** `adminGetUser` to enrich (name/email).
+  4. Return `{ members: [...] }`.
+
+# 5) Communication & Data Flow
+
+* **Handlers ↔ Utils:** Handlers are thin: they validate inputs, get user claims, and call utils for DB/Cognito work.
+* **Environment variables:** From `serverless.yml` → `process.env.CLIENT_ID`, `process.env.USER_POOL_ID`.
+* **DynamoDB data models:**
+
+  * **Classroom item** (validated by `ClassroomSchema`):
+
+    ```json
+    {
+      "classroomID": "uuid",
+      "classroomName": "Physics 101",
+      "school": "IC Beirut",
+      "createdAt": "2025-08-01T09:15:30.150Z",
+      "teacherId": "…",
+      "teacherName": "Mona Ahmad",
+      "joinCode": "AB1724520412731"
+    }
+    ```
+  * **Membership item** (validated by `MembershipSchema`):
+
+    ```json
+    {
+      "PK": "USER#<userId>"        |  "CLASSROOM#<classroomId>",
+      "SK": "CLASSROOM#<classId>"  |  "USER#<userId>",
+      "role": "student" | "instructor",
+      "joinedAt": "ISO timestamp"
+    }
+    ```
+* **DynamoDB access patterns:**
+
+  * Get classroom by ID → `GetItem(classrooms, { classroomID })`
+  * Get classroom by join code → `Query(classrooms, GSI joinCode-index, joinCode = :jc)`
+  * List user’s classrooms → `Query(memberships, PK = USER#<id>)`
+  * List classroom’s members → `Query(memberships, PK = CLASSROOM#<id>)`
+* **Cognito data:**
+
+  * JWT **claims** (already in request for protected routes) → `sub`, `email`, `custom:*`
+  * Admin reads (get member details) → `adminGetUser(UserPoolId, Username)` in `fetchStudentInfo.ts`
+
+# 6) Developer’s Perspective (why these choices)
+
+* **Serverless** (API Gateway + Lambda): no servers to manage; pay per request; easy to scale.
+* **Separation of concerns:**
+
+  * Handlers = endpoint logic
+  * Schemas = data contracts
+  * Utils = DB/Cognito operations
+  * Barrel export (`index.ts`) = clean mapping to `serverless.yml`
+* **Single-table-ish membership pattern:** Bidirectional edges (`USER#…` ↔ `CLASSROOM#…`) make the two main queries O(1) with a `Query` (fast).
+* **Zod validation:** Guards every write with a schema; auto-types with `z.infer<>`.
+* **Idempotency & safety:** Conditional writes (`attribute_not_exists(...)`) stop accidental overwrites or duplicate memberships.
+
+# 7) Key code interactions (mini snippets)
+
+**Route → export → handler:**
+
+```yml
+# serverless.yml
+functions:
+  createClassroom:
+    handler: dist/index.createClassroomHandler
+    events:
+      - http:
+          path: classroom/create
+          method: post
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            userPoolArn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+```
+
+```ts
+// src/index.ts
+export { createClassroomHandler } from './handlers/classroom/create';
+```
+
+```ts
+// src/handlers/classroom/create.ts
+export const createClassroomHandler: APIGatewayProxyHandler = async (event) => {
+  const claims = (event.requestContext.authorizer as any)?.claims;
+  // ...validate, build record...
+  await insertClassroomRecord(classroom);
+  await insertMembershipRecord(m1);
+  await insertMembershipRecord(m2);
+  return { statusCode: 201, body: JSON.stringify({ classroomID: classroom.classroomID }) };
+};
+```
+
+**Dynamo helper usage:**
+
+```ts
+// src/utils/database/insertClassroom.ts
+await dobClient.put({
+  TableName: 'classrooms',
+  Item: classroom,
+  ConditionExpression: 'attribute_not_exists(classroomID)' // prevents overwrite
+}).promise();
+```
+
+**Membership keys you rely on:**
+
+```txt
+# User -> Classrooms
+PK = USER#<userId>
+SK = CLASSROOM#<classroomId>
+
+# Classroom -> Users
+PK = CLASSROOM#<classroomId>
+SK = USER#<userId>
+```
+
+# 8) Important fixes & gotchas (actionable)
+
+* **Fix the authorizer ARN** in `serverless.yml` (you’re missing account id + `userpool/` segment):
+
+  ```yml
+  userPoolArn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+  ```
+
+* **Fix conditional write bug** in `insertClassroom.ts` (attribute name mismatch):
+
+  ```diff
+  - ConditionExpression: 'attribute_not_exists(classroomId)'
+  + ConditionExpression: 'attribute_not_exists(classroomID)'
+  ```
+
+* **Identity to use with Cognito Admin APIs:**
+  Your code stores membership keys using `claims.sub`. **`adminGetUser` expects `Username`**, which is usually **`cognito:username`**, not `sub`. Pick one:
+
+  * Store `cognito:username` in membership keys (recommended), *or*
+  * Map `sub → Username` first (extra API call).
+
+* **Filter only students** in `getStudentIDsByClassroom` (optional but likely intended):
+
+  ```ts
+  return (data.Items || [])
+    .filter(item => item.SK.startsWith('USER#') && item.role === 'student')
+    .map(item => item.SK.slice('USER#'.length));
+  ```
+
+* **Consistent Zod import:** use either `import { z } from 'zod'` everywhere, or enable `esModuleInterop` if you prefer `import z from 'zod'`.
+
+* **IAM permissions (add to `serverless.yml`)**: you’ll need at least:
+
+  ```yml
+  provider:
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:Query
+          - dynamodb:TransactWriteItems
+        Resource:
+          - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/classrooms
+          - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/classrooms/index/joinCode-index
+          - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/memberships
+      - Effect: Allow
+        Action:
+          - cognito-idp:SignUp
+          - cognito-idp:ConfirmSignUp
+          - cognito-idp:InitiateAuth
+          - cognito-idp:AdminGetUser
+        Resource: "*"
+  ```
+
+* **(Optional) Transactions** for dual membership writes (avoid half-writes):
+
+  ```ts
+  await dobClient.transactWrite({
+    TransactItems: [
+      { Put: { TableName: 'memberships', Item: m1, ConditionExpression: 'attribute_not_exists(PK) AND attribute_not_exists(SK)' } },
+      { Put: { TableName: 'memberships', Item: m2, ConditionExpression: 'attribute_not_exists(PK) AND attribute_not_exists(SK)' } },
+    ]
+  }).promise();
+  ```
+
+* **Join code UX/security:** Your current code makes long, timestamp-based codes. Consider an 8-char random code (harder to guess).
+
+# 9) Minimal glossary (plain English)
+
+* **Lambda:** Tiny server function that runs on demand.
+* **API Gateway:** Front door that routes HTTP paths to Lambdas; can check auth.
+* **Cognito (User Pool):** Managed user directory (signup, login, JWTs, custom attributes).
+* **JWT (JSON Web Token):** Signed JSON that proves who the user is (contains “claims” like `email`, `sub`).
+* **DynamoDB:** NoSQL key-value database; super fast if you design keys right.
+* **GSI (Global Secondary Index):** An alternate “search key” on a table (you used it for `joinCode`).
+* **Zod:** Library for validating and parsing data; gives types to TS.
+* **PK/SK:** Partition key / Sort key—how Dynamo groups and orders items for fast queries.
+
+---
+
+That’s the whole system: **Cognito handles identity**, **API Gateway guards the doors**, **Lambda handlers** orchestrate each feature with **Zod** and **DynamoDB** helpers, and your **schemas** keep data clean.
+
+Want me to turn the “fixes” into ready-to-paste diffs (ARN, condition, student filter, and a version of `fetchStudentInfo` that works with `cognito:username`)?
