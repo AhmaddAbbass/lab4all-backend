@@ -10,3 +10,11 @@ export { createClassroomHandler } from './handlers/classroom/create';
 export { joinClassroomHandler } from './handlers/classroom/join';
 export { getMyClassroomsHandler } from './handlers/classroom/getClassrooms';
 export { getMembersHandler } from './handlers/classroom/getMembers';
+
+// NEW
+export { deleteMembershipHandler } from './handlers/classroom/leave';
+export { kickStudentHandler } from './handlers/classroom/kick';
+export { registerSchoolHandler } from './handlers/school/register';
+
+export { listSchoolsHandler } from './handlers/school/list';
+export { getSchoolHandler }  from './handlers/school/get';

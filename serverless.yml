@@ -5,8 +5,15 @@ provider:
   runtime: nodejs18.x
   region: us-east-1
   environment:
-    USER_POOL_ID: us-east-1_H98uAiglK
-    CLIENT_ID: 2k3729eh2gm42prsp0siarg0e7
+    # Cognito
+    USER_POOL_ID: us-east-1_R8nus0NoJ
+    CLIENT_ID: 5ioefbupk9cl6eikb46aqqqn57
+    # Dynamo tables (use these in code instead of hardcoded names)
+    CLASSROOMS_TABLE: classrooms
+    MEMBERSHIPS_TABLE: memberships
+    SCHOOLS_TABLE: schools
+    # Feature flags (optional)
+    STRICT_SCHOOL_SIGNUP: 'true'
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -14,20 +21,31 @@ provider:
         - dynamodb:PutItem
         - dynamodb:Query
         - dynamodb:TransactWriteItems
+        - dynamodb:DeleteItem
       Resource:
+        # classrooms
         - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/classrooms
         - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/classrooms/index/joinCode-index
+        # memberships
         - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/memberships
+        # schools (+ GSIs for browse/search)
+        - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/schools
+        - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/schools/index/countryCityName-index
+        - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/schools/index/countryName-index
+        - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/schools/index/globalName-index
+
     - Effect: Allow
       Action:
         - cognito-idp:SignUp
         - cognito-idp:ConfirmSignUp
         - cognito-idp:InitiateAuth
         - cognito-idp:AdminGetUser
-        - cognito-idp:ListUsers       # needed for sub→username resolution
+        - cognito-idp:ListUsers          # needed for sub→username resolution
+        - cognito-idp:AdminUpdateUserAttributes  # for auto-binding school to instructor
       Resource: "*"
 
 functions:
+  # ---------- Auth ----------
   signup:
     handler: dist/index.signupHandler
     events:
@@ -62,6 +80,7 @@ functions:
           method: post
           cors: true
 
+  # ---------- Classroom ----------
   createClassroom:
     handler: dist/index.createClassroomHandler
     events:
@@ -101,6 +120,53 @@ functions:
           cors: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+
+  deleteMembership:
+    handler: dist/index.deleteMembershipHandler
+    events:
+      - http:
+          path: classroom/membership
+          method: delete
+          cors: true
+          authorizer:
+            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+
+  kickStudent:
+    handler: dist/index.kickStudentHandler
+    events:
+      - http:
+          path: classroom/kick
+          method: post
+          cors: true
+          authorizer:
+            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+
+  # ---------- Schools ----------
+  registerSchool:
+    handler: dist/index.registerSchoolHandler
+    events:
+      - http:
+          path: school/register
+          method: post
+          cors: true
+          authorizer:
+            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+
+  listSchools:
+    handler: dist/index.listSchoolsHandler
+    events:
+      - http:
+          path: schools
+          method: get
+          cors: true
+
+  getSchool:
+    handler: dist/index.getSchoolHandler
+    events:
+      - http:
+          path: schools/{schoolId}
+          method: get
+          cors: true
 
 plugins:
   - serverless-offline

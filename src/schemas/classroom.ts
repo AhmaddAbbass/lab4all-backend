@@ -4,6 +4,7 @@ import { z } from 'zod';
 export const ClassroomSchema = z.object({
   classroomID: z.string(),
   classroomName: z.string(),
+  schoolId: z.string(),
   school: z.string(),
   createdAt: z.string().datetime(), // ISO 8601 format
   teacherId: z.string(),

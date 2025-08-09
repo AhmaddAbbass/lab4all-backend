@@ -26,6 +26,7 @@ export const joinClassroomHandler: APIGatewayProxyHandler = async (event) => {
     }
 
     const userId = claims.sub; 
+    const studentSchoolId = claims['custom:schoolId'];  
 
     const body = JSON.parse(event.body || '{}');
     const parsedBody = requestBodySchema.safeParse(body);
@@ -45,6 +46,14 @@ export const joinClassroomHandler: APIGatewayProxyHandler = async (event) => {
         body: JSON.stringify({ error: 'Invalid join code' }),
       };
     }
+
+
+    // same school??
+    if (!classroom.schoolId || classroom.schoolId !== studentSchoolId) {
+      return { statusCode: 403, body: JSON.stringify({ error: 'CANT_JOIN_DIFFERENT_SCHOOL' }) };
+    }
+
+
     // console.log("Classroom object:", classroom);
     const classroomID = classroom.classroomID;
 

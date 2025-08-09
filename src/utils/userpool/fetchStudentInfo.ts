@@ -12,6 +12,7 @@ interface StudentInfo {
   school: string;
   grade: string;
   role: string;
+  schoolId: string;
 }
 
 export const fetchStudentInfo = async (studentId: string): Promise<StudentInfo | null> => {
@@ -40,6 +41,7 @@ export const fetchStudentInfo = async (studentId: string): Promise<StudentInfo |
       school: attrs['custom:school'] || '',
       grade: attrs['custom:grade'] || '',
       role: attrs['custom:role'] || '',
+      schoolId: attrs['custom:schoolId'] || ''
     };
   } catch (err) {
     try {
@@ -77,6 +79,7 @@ export const fetchStudentInfo = async (studentId: string): Promise<StudentInfo |
         school: attrs['custom:school'] || '',
         grade: attrs['custom:grade'] || '',
         role: attrs['custom:role'] || '',
+        schoolId: attrs['custom:schoolId'] || ''
       };
     } catch (err2) {
       console.error(`Error fetching user ${studentId}:`, err2);

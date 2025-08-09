@@ -1,67 +1,113 @@
+// src/handlers/auth/signup.ts
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { z } from 'zod';
+import { resolveSchool } from '../../utils/database/fetchSchools';
 
 const cognito = new AWS.CognitoIdentityServiceProvider();
 
 const bodySchema = z.object({
-  email:     z.string().email(),
-  password:  z.string().min(8),
-  firstName: z.string().nonempty(),
-  lastName:  z.string().nonempty(),
-  school:    z.string().nonempty(),
-  role:      z.enum(['student', 'instructor']),
-  grade:     z.string().nonempty(),
+  email:       z.string().email(),
+  password:    z.string().min(8),
+  firstName:   z.string().min(1).trim(),
+  lastName:    z.string().min(1).trim(),
+  role:        z.enum(['student', 'instructor']),
+  grade:       z.string().min(1).trim(),
+  // Either a direct id...
+  schoolId:    z.string().min(1).trim().optional(),
+  // ...or name-based fields the backend can resolve:
+  schoolName:  z.string().min(1).trim().optional(),
+  countryCode: z.string().length(2).trim().optional(),
+  city:        z.string().min(1).trim().optional(),
 });
 
 export const signupHandler: APIGatewayProxyHandler = async (event) => {
-  // bodySchema.safeParse  will check if the body match the expected schema haha
-    // console.log('EVENT:', JSON.stringify(event, null, 2));
+  // Parse & validate
+  let body: unknown;
+  try {
+    body = JSON.parse(event.body || '{}');
+  } catch {
+    return { statusCode: 400, body: JSON.stringify({ error: 'INVALID_JSON' }) };
+  }
 
-  const parsed = bodySchema.safeParse(JSON.parse(event.body || '{}'));
-  // console.log('PARSED:', JSON.stringify(parsed, null, 2));
+  const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
     return {
       statusCode: 400,
-      body: JSON.stringify({
-        error: 'INVALID_INPUT',
-        details: parsed.error.format(),
-      }),
+      body: JSON.stringify({ error: 'INVALID_INPUT', details: parsed.error.format() }),
     };
   }
 
+  const {
+    email, password, firstName, lastName, role, grade,
+    schoolId, schoolName, countryCode, city
+  } = parsed.data;
 
-  const { email, password, firstName, lastName, school, role, grade } = parsed.data;
+  const emailNorm = email.trim().toLowerCase();
+  const isInstructor = role === 'instructor';
+  const isStudent = role === 'student';
+
+  // Resolve school using either schoolId OR (schoolName + optional country/city)
+  const { school, reason } = await resolveSchool({
+    schoolId, schoolName, countryCode, city,
+  });
+
+  // Students must resolve to a real school
+  if (isStudent && !school) {
+    // More specific error if an explicit ID was invalid
+    if (schoolId && reason === 'NOT_FOUND') {
+      return { statusCode: 400, body: JSON.stringify({ error: 'INVALID_SCHOOL_ID' }) };
+    }
+    return { statusCode: 400, body: JSON.stringify({ error: 'SCHOOL_AMBIGUOUS_OR_NOT_FOUND' }) };
+  }
+
+  // Build Cognito attributes
+  const userAttributes: AWS.CognitoIdentityServiceProvider.AttributeType[] = [
+    { Name: 'email',        Value: emailNorm },
+    { Name: 'given_name',   Value: firstName },
+    { Name: 'family_name',  Value: lastName },
+    { Name: 'custom:role',  Value: role },
+    { Name: 'custom:grade', Value: grade },
+  ];
+
+  // Only set school attributes if we have a resolved school (instructor may not yet)
+  if (school) {
+    userAttributes.push(
+      { Name: 'custom:schoolId', Value: school.schoolId },
+      { Name: 'custom:school',   Value: school.name },
+    );
+  }
 
   try {
-    // call Cognito to sign up the user
     await cognito.signUp({
       ClientId: process.env.CLIENT_ID!,
-      Username: email,
+      Username: emailNorm,
       Password: password,
-      UserAttributes: [
-        { Name: 'email',         Value: email },
-        { Name: 'given_name',    Value: firstName },
-        { Name: 'family_name',   Value: lastName },
-        { Name: 'custom:school', Value: school },
-        { Name: 'custom:role',   Value: role },
-        { Name: 'custom:grade',  Value: grade },
-      ],
+      UserAttributes: userAttributes,
     }).promise();
 
+    // Tailored success message
+    const base = { message: 'Signup successful. Please confirm your account.' };
+    if (isInstructor && !school) {
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          ...base,
+          note: 'After confirming your account, please register your school so students can join.',
+          needsSchoolRegistration: true,
+        }),
+      };
+    }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: 'Signup successful' }),
-    };
+    return { statusCode: 200, body: JSON.stringify(base) };
   } catch (err: any) {
-    // console.error('Signup error:', err);
-    // Handling specific Cognito errors is needed here 
-    return {
-      statusCode: 400,
-      body: JSON.stringify({
-        error: err.message || 'Signup failed',
-      }),
-    };
+    const code = err?.code || err?.name;
+    if (code === 'UsernameExistsException') {
+      return { statusCode: 409, body: JSON.stringify({ error: 'EMAIL_ALREADY_REGISTERED' }) };
+    }
+    if (code === 'InvalidPasswordException') {
+      return { statusCode: 400, body: JSON.stringify({ error: 'WEAK_PASSWORD' }) };
+    }
+    return { statusCode: 400, body: JSON.stringify({ error: err?.message || 'Signup failed' }) };
   }
 };

@@ -1,89 +1,55 @@
+// src/handlers/classroom/create.ts
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { v4 as uuidv4 } from 'uuid';
 import { ClassroomSchema } from '../../schemas/classroom';
 import { insertClassroomRecord } from '../../utils/database/insertClassroom';
 import { generateJoinCode } from '../../utils/other/generateJoinCode';
-import { insertMembershipRecord } from "../../utils/database/insertMembership";
-/**
- * POST /classroom/create
- *
- * Creates a new classroom.
- *
- * Authorization: Requires a valid Cognito JWT (teacher role).
- * Request Body (JSON):
- * {
- *   "classroomName": "Physics 101",
- *   "school": "International College Beirut"
- * }
- *
- * The `teacherId` and `teacherName` are extracted from the Cognito token.
- * The following fields are generated server-side:
- *  - classroomID: UUID
- *  - createdAt: ISO timestamp
- *  - joinCode: Last 8 digits of timestamp (or another strategy)
- *
- * Example Full Classroom Object (saved to DynamoDB):
- * {
- *   "classroomID": "uuid-...",
- *   "classroomName": "Physics 101",
- *   "school": "International College Beirut",
- *   "createdAt": "2025-08-01T09:15:30.150Z",
- *   "teacherId": "auth0|abcd1234",
- *   "teacherName": "mona.ahmad",
- *   "joinCode": "12345678"
- * }
- */
+import { getSchoolById } from '../../utils/database/getSchoolById';
+import { putMembershipBothWays } from '../../utils/database/putMembershipBothWays';
 
 export const createClassroomHandler: APIGatewayProxyHandler = async (event) => {
-  // Since the dynamo functions are imported from utils, we can assume the DynamoDB client is already set up.
-  // We only need to prepare the info for the injection and use the api request body well. 
-
+  // Auth & role check
   const claims = (event.requestContext.authorizer as any)?.claims;
   if (!claims) {
-    return {
-      statusCode: 401,
-      body: JSON.stringify({ error: 'Unauthorized' }),
-    };
+    return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
   }
-  const userProfile = {
-    userId: claims.sub,
-    email:  claims.email,
-    role:   claims['custom:role'],
-    school: claims['custom:school'],
-    grade:  claims['custom:grade'],
-  };
-  if (userProfile.role !== 'instructor') {
-    return {
-      statusCode: 403,
-      body: JSON.stringify({ error: 'Only teachers can create classrooms' }),
-    };
+  if (claims['custom:role'] !== 'instructor') {
+    return { statusCode: 403, body: JSON.stringify({ error: 'Only teachers can create classrooms' }) };
   }
 
-  
   // Parse request body
-  let body;
+  let body: any = {};
   try {
     body = JSON.parse(event.body || '{}');
   } catch {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Invalid JSON body' }),
-    };
+    return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON body' }) };
   }
-  console.log('Step 2 – parsed body:', body);                       // <─ NEW
-  const joinCode= generateJoinCode();
+
+  // Resolve school from claims (canonical) and hydrate name server-side
+  const schoolId = claims['custom:schoolId'];
+  if (!schoolId) {
+    return { statusCode: 400, body: JSON.stringify({ error: 'MISSING_SCHOOL_ID_ON_ACCOUNT' }) };
+  }
+  const school = await getSchoolById(schoolId);
+  if (!school) {
+    return { statusCode: 400, body: JSON.stringify({ error: 'SCHOOL_NOT_FOUND' }) };
+  }
+
+  // Build classroom item
+  const joinCode = generateJoinCode(); // generate ONCE and reuse
   const classroomRecord = {
     classroomID: uuidv4(),
-    classroomName: body.classroomName,
-    school: body.school,
+    classroomName: String(body.classroomName || '').trim(),
+    schoolId: school.schoolId,
+    school: school.name, // do NOT trust body for name
     createdAt: new Date().toISOString(),
-    teacherId: userProfile.userId,
-    teacherName: claims['given_name'] +' '+ claims['family_name'] ,
-    joinCode: joinCode,
+    teacherId: claims.sub,
+    teacherName: [claims['given_name'], claims['family_name']].filter(Boolean).join(' ') || claims.email,
+    joinCode,
   };
 
-  // Validate input
-  const validation = ClassroomSchema.safeParse(classroomRecord); // this validation uses zod 
+  // Validate payload against schema
+  const validation = ClassroomSchema.safeParse(classroomRecord);
   if (!validation.success) {
     return {
       statusCode: 400,
@@ -91,36 +57,27 @@ export const createClassroomHandler: APIGatewayProxyHandler = async (event) => {
     };
   }
 
-  // Insert into DynamoDB
-    console.log('Step 3 – about to call insertClassroomRecord');      // <─ NEW
-
+  // Write classroom, then membership edges atomically
   try {
     await insertClassroomRecord(validation.data);
-    await insertMembershipRecord({
-      PK: `USER#${validation.data.teacherId}`,
-      SK: `CLASSROOM#${validation.data.classroomID}`,
-      role: "instructor",
-      joinedAt : validation.data.createdAt // using the same createdAt timestamp
+
+    await putMembershipBothWays({
+      userId: validation.data.teacherId,
+      classroomId: validation.data.classroomID,
+      role: 'instructor',
+      joinedAt: validation.data.createdAt,
     });
 
-    await insertMembershipRecord({
-      PK: `CLASSROOM#${validation.data.classroomID}`,
-      SK: `USER#${validation.data.teacherId}`,
-      role: "instructor",
-      joinedAt : validation.data.createdAt // using the same createdAt timestamp
-
-    });
-    
     return {
       statusCode: 201,
-      body: JSON.stringify({ message: 'Classroom created', classroomID: validation.data.classroomID,joinCode: joinCode }),
+      body: JSON.stringify({
+        message: 'Classroom created',
+        classroomID: validation.data.classroomID,
+        joinCode, // same one stored
+      }),
     };
   } catch (err) {
-        console.error('Step 4 – insert ERROR:', err);                   // <─ NEW
-
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to insert classroom' }),
-    };
+    console.error('createClassroom error:', err);
+    return { statusCode: 500, body: JSON.stringify({ error: 'Failed to insert classroom' }) };
   }
 };

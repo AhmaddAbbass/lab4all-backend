@@ -1,3 +1,4 @@
+// auth/confirm.ts
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { z } from 'zod';
