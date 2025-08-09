@@ -71,7 +71,7 @@ export const createClassroomHandler: APIGatewayProxyHandler = async (event) => {
     };
   }
   console.log('Step 2 – parsed body:', body);                       // <─ NEW
-
+  const joinCode= generateJoinCode();
   const classroomRecord = {
     classroomID: uuidv4(),
     classroomName: body.classroomName,
@@ -79,7 +79,7 @@ export const createClassroomHandler: APIGatewayProxyHandler = async (event) => {
     createdAt: new Date().toISOString(),
     teacherId: userProfile.userId,
     teacherName: claims['given_name'] +' '+ claims['family_name'] ,
-    joinCode: generateJoinCode(),
+    joinCode: joinCode,
   };
 
   // Validate input
@@ -113,7 +113,7 @@ export const createClassroomHandler: APIGatewayProxyHandler = async (event) => {
     
     return {
       statusCode: 201,
-      body: JSON.stringify({ message: 'Classroom created', classroomID: validation.data.classroomID }),
+      body: JSON.stringify({ message: 'Classroom created', classroomID: validation.data.classroomID,joinCode: joinCode }),
     };
   } catch (err) {
         console.error('Step 4 – insert ERROR:', err);                   // <─ NEW

@@ -52,8 +52,7 @@ functions:
           method: get
           cors: true
           authorizer:
-            type: COGNITO_USER_POOLS
-            userPoolArn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
 
   confirm:
     handler: dist/index.confirmHandler
@@ -71,8 +70,7 @@ functions:
           method: post
           cors: true
           authorizer:
-            type: COGNITO_USER_POOLS
-            userPoolArn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
 
   joinClassroom:
     handler: dist/index.joinClassroomHandler
@@ -82,8 +80,7 @@ functions:
           method: post
           cors: true
           authorizer:
-            type: COGNITO_USER_POOLS
-            userPoolArn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
 
   getClassrooms:
     handler: dist/index.getMyClassroomsHandler
@@ -93,8 +90,7 @@ functions:
           method: get
           cors: true
           authorizer:
-            type: COGNITO_USER_POOLS
-            userPoolArn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
 
   getMembers:
     handler: dist/index.getMembersHandler
@@ -104,8 +100,7 @@ functions:
           method: post
           cors: true
           authorizer:
-            type: COGNITO_USER_POOLS
-            userPoolArn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
 
 plugins:
   - serverless-offline

@@ -1,24 +1,29 @@
 {
   "name": "lab4all-backend",
   "version": "1.0.0",
+  "description": "",
   "main": "index.js",
+  "license": "ISC",
   "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "offline": "serverless offline",
+    "deploy": "serverless deploy",
+    "remove": "serverless remove",
+    "info": "serverless info --verbose",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
     "aws-sdk": "^2.1692.0",
-    "zod": "^4.0.14"
+    "uuid": "^11.1.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.152",
-    "@types/node": "^24.1.0",
-    "serverless": "^3.40.0",
-    "serverless-esbuild": "^1.55.1",
+    "@types/node": "^24.2.0",
+    "serverless": "^4.18.0",
     "serverless-offline": "^14.4.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.2"
   }
 }
