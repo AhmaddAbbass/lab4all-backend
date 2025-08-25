@@ -24,7 +24,7 @@ const bodySchema = z.object({
 export const signupHandler: APIGatewayProxyHandler = async (event) => {
   // Parse & validate
   let body: unknown;
-  try {
+  try { 
     body = JSON.parse(event.body || '{}');
   } catch {
     return { statusCode: 400, body: JSON.stringify({ error: 'INVALID_JSON' }) };

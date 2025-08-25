@@ -158,25 +158,30 @@
 
 **Now you have:** Global list for simple pickers.
 
+
 ---
 
-### Route: GET /schools?countryCode=LB&city=Beirut
+### Route: GET /schools?q=inter\&countryCode=LB
 
-**What it does:** Searches schools by name prefix **within a country**.
+**What it does:** Searches schools by **name prefix** within a country.
 **Method:** GET — **Authorization:** Not required
 **Body expects:** *(none)*
+
 **Example Output:**
 
 ```json
 {
   "schools": [
-    { "schoolId": "beirut-high-school", "name": "Beirut High School", "countryCode": "LB", "city": "Beirut" }
+    { "schoolId": "international-college-beirut", "name": "International College Beirut", "countryCode": "LB", "city": "Beirut" }
   ],
   "nextToken": null
 }
 ```
 
 **Now you have:** Typeahead results for UI.
+
+> Tip: `/schools` **with no params** returns all schools alphabetically.
+> Prefix rules use slugged names (e.g., `international-college-beirut`), so match from the start: `inter…`, not `…bei…`.
 
 ---
 
@@ -185,14 +190,15 @@
 **What it does:** Lists schools in a **city** (alphabetical).
 **Method:** GET — **Authorization:** Not required
 **Body expects:** *(none)*
+
 **Example Output:**
 
 ```json
 {
   "schools": [
-    { "schoolId": "international-college-beirut", "name": "International College Beirut" },
-    { "schoolId": "beirut-high-school", "name": "Beirut High School" }
-  ]
+    { "schoolId": "international-college-beirut", "name": "International College Beirut" }
+  ],
+  "nextToken": null
 }
 ```
 

@@ -1,4 +1,4 @@
-// utils/dynamoInsert.ts
+// insertMembership
 import { dobClient } from './dynamo';
 import { Membership, MembershipSchema} from '../../schemas/membership';
 
