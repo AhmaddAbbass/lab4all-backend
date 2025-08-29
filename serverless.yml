@@ -4,6 +4,9 @@ provider:
   name: aws
   runtime: nodejs18.x
   region: us-east-1
+  stage: dev
+  profile: default
+
   environment:
     # Cognito
     USER_POOL_ID: us-east-1_R8nus0NoJ
@@ -12,37 +15,61 @@ provider:
     CLASSROOMS_TABLE: classrooms
     MEMBERSHIPS_TABLE: memberships
     SCHOOLS_TABLE: schools
+    ANNOUNCEMENTS_TABLE: announcements
+    # Buckets
+    ANNOUNCEMENTS_BUCKET: announcements-lab4all
     # Feature flags (optional)
-    STRICT_SCHOOL_SIGNUP: 'true'
+    STRICT_SCHOOL_SIGNUP: "true"
+
+    # Presigned URLS TTL:
+    SIGNED_URL_TTL: "600"
+
   iamRoleStatements:
+    # Dynamo permissions
     - Effect: Allow
       Action:
         - dynamodb:GetItem
         - dynamodb:PutItem
+        - dynamodb:UpdateItem
         - dynamodb:Query
         - dynamodb:TransactWriteItems
         - dynamodb:DeleteItem
+        - dynamodb:BatchGetItem
       Resource:
         # classrooms
-        - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/classrooms
-        - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/classrooms/index/joinCode-index
+        - arn:aws:dynamodb:${self:provider.region}:529710251073:table/classrooms
+        - arn:aws:dynamodb:${self:provider.region}:529710251073:table/classrooms/index/joinCode-index
         # memberships
-        - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/memberships
+        - arn:aws:dynamodb:${self:provider.region}:529710251073:table/memberships
         # schools (+ GSIs for browse/search)
-        - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/schools
-        - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/schools/index/countryCityName-index
-        - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/schools/index/countryName-index
-        - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/schools/index/globalName-index
+        - arn:aws:dynamodb:${self:provider.region}:529710251073:table/schools
+        - arn:aws:dynamodb:${self:provider.region}:529710251073:table/schools/index/countryCityName-index
+        - arn:aws:dynamodb:${self:provider.region}:529710251073:table/schools/index/countryName-index
+        - arn:aws:dynamodb:${self:provider.region}:529710251073:table/schools/index/globalName-index
+        # announcements
+        - arn:aws:dynamodb:${self:provider.region}:529710251073:table/announcements
+        - arn:aws:dynamodb:${self:provider.region}:529710251073:table/announcements/index/announcementId-index
+        - arn:aws:dynamodb:${self:provider.region}:529710251073:table/announcements/index/author-index
 
+    # Congnito Permissions
     - Effect: Allow
       Action:
         - cognito-idp:SignUp
         - cognito-idp:ConfirmSignUp
         - cognito-idp:InitiateAuth
         - cognito-idp:AdminGetUser
-        - cognito-idp:ListUsers          # needed for sub→username resolution
-        - cognito-idp:AdminUpdateUserAttributes  # for auto-binding school to instructor
+        - cognito-idp:ListUsers # needed for sub→username resolution
+        - cognito-idp:AdminUpdateUserAttributes # for auto-binding school to instructor
       Resource: "*"
+
+    # S3 permissions for announcements bucket
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+        - s3:GetObject
+        - s3:DeleteObject
+      Resource:
+        - arn:aws:s3:::${self:provider.environment.ANNOUNCEMENTS_BUCKET}/*
 
 functions:
   # ---------- Auth ----------
@@ -70,7 +97,7 @@ functions:
           method: get
           cors: true
           authorizer:
-            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
   confirm:
     handler: dist/index.confirmHandler
@@ -89,7 +116,7 @@ functions:
           method: post
           cors: true
           authorizer:
-            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
   joinClassroom:
     handler: dist/index.joinClassroomHandler
@@ -99,7 +126,7 @@ functions:
           method: post
           cors: true
           authorizer:
-            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
   getClassrooms:
     handler: dist/index.getMyClassroomsHandler
@@ -109,7 +136,7 @@ functions:
           method: get
           cors: true
           authorizer:
-            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
   getMembers:
     handler: dist/index.getMembersHandler
@@ -119,7 +146,7 @@ functions:
           method: post
           cors: true
           authorizer:
-            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
   deleteMembership:
     handler: dist/index.deleteMembershipHandler
@@ -129,7 +156,7 @@ functions:
           method: delete
           cors: true
           authorizer:
-            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
   kickStudent:
     handler: dist/index.kickStudentHandler
@@ -139,7 +166,7 @@ functions:
           method: post
           cors: true
           authorizer:
-            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
   # ---------- Schools ----------
   registerSchool:
@@ -150,7 +177,7 @@ functions:
           method: post
           cors: true
           authorizer:
-            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:provider.environment.USER_POOL_ID}
+            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
   listSchools:
     handler: dist/index.listSchoolsHandler
@@ -167,6 +194,27 @@ functions:
           path: schools/{schoolId}
           method: get
           cors: true
+
+  # ---------- Announcements ----------
+  createAnnouncement:
+    handler: dist/index.createAnnouncementHandler
+    events:
+      - http:
+          path: announcements/create
+          method: post
+          cors: true
+          authorizer:
+            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
+
+  fetchAnnouncements:
+    handler: dist/handlers/announcements/fetch.fetchAnnouncementsHandler
+    events:
+      - http:
+          path: announcements/fetch
+          method: get
+          cors: true
+          authorizer:
+            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
 plugins:
   - serverless-offline

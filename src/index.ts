@@ -18,3 +18,6 @@ export { registerSchoolHandler } from './handlers/school/register';
 
 export { listSchoolsHandler } from './handlers/school/list';
 export { getSchoolHandler }  from './handlers/school/get';
+
+export { createAnnouncementHandler } from './handlers/announcements/create';
+export { fetchAnnouncementsHandler } from "./handlers/announcements/fetch";
