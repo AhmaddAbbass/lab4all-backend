@@ -21,6 +21,27 @@ const calcExpiresAt = () =>
 
 export const fetchAnnouncementsHandler: APIGatewayProxyHandler = async (event) => {
   try {
+
+        const claims = event.requestContext?.authorizer?.claims;
+
+    if (!claims) {
+    return {
+        statusCode: 401,
+        body: JSON.stringify({ error: "Unauthorized – no claims present" }),
+    };
+    }
+
+    const userId = claims.sub;          // unique Cognito user ID
+    const userRole = claims["custom:role"]; // assuming you store role as a custom attribute
+
+    // Ensure role is instructor
+    if (userRole !== "instructor") {
+    return {
+        statusCode: 403,
+        body: JSON.stringify({ error: "Only instructors can create announcements" }),
+    };
+    }
+    
     /* 1. Validate query-string */
     const qs    = event.queryStringParameters ?? {};
     const input = AnnFetchSchema.parse({
