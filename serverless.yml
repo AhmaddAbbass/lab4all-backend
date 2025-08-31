@@ -2,7 +2,7 @@ service: lab4all-auth
 
 provider:
   name: aws
-  runtime: nodejs18.x
+  runtime: nodejs22.x
   region: us-east-1
   stage: dev
   profile: default
@@ -16,8 +16,11 @@ provider:
     MEMBERSHIPS_TABLE: memberships
     SCHOOLS_TABLE: schools
     ANNOUNCEMENTS_TABLE: announcements
+    EXPERIMENTS_TABLE: experiments
+
     # Buckets
     ANNOUNCEMENTS_BUCKET: announcements-lab4all
+    EXPERIMENTS_BUCKET: experiments-lab4all
     # Feature flags (optional)
     STRICT_SCHOOL_SIGNUP: "true"
 
@@ -50,7 +53,9 @@ provider:
         - arn:aws:dynamodb:${self:provider.region}:529710251073:table/announcements
         - arn:aws:dynamodb:${self:provider.region}:529710251073:table/announcements/index/announcementId-index
         - arn:aws:dynamodb:${self:provider.region}:529710251073:table/announcements/index/author-index
-
+        # experiments
+        - arn:aws:dynamodb:${self:provider.region}:529710251073:table/experiments
+        - arn:aws:dynamodb:${self:provider.region}:529710251073:table/experiments/index/userId-index
     # Congnito Permissions
     - Effect: Allow
       Action:
@@ -114,7 +119,12 @@ functions:
       - http:
           path: classroom/create
           method: post
-          cors: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -124,7 +134,12 @@ functions:
       - http:
           path: classroom/join
           method: post
-          cors: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -134,7 +149,12 @@ functions:
       - http:
           path: classroom/list
           method: get
-          cors: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -144,7 +164,12 @@ functions:
       - http:
           path: classroom/members
           method: post
-          cors: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -154,7 +179,12 @@ functions:
       - http:
           path: classroom/membership
           method: delete
-          cors: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -164,7 +194,12 @@ functions:
       - http:
           path: classroom/kick
           method: post
-          cors: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -175,7 +210,12 @@ functions:
       - http:
           path: school/register
           method: post
-          cors: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -185,7 +225,12 @@ functions:
       - http:
           path: schools
           method: get
-          cors: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
 
   getSchool:
     handler: dist/index.getSchoolHandler
@@ -193,7 +238,12 @@ functions:
       - http:
           path: schools/{schoolId}
           method: get
-          cors: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
 
   # ---------- Announcements ----------
   createAnnouncement:
@@ -202,7 +252,12 @@ functions:
       - http:
           path: announcements/create
           method: post
-          cors: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -212,7 +267,116 @@ functions:
       - http:
           path: announcements/fetch
           method: get
-          cors: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
+          authorizer:
+            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
+  # ---------- Experiment ----------
+  createExperiment:
+    handler: dist/index.createExperimentHandler
+    events:
+      - http:
+          path: experiments/create
+          method: post
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
+          authorizer:
+            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
+
+  logExperiment:
+    handler: dist/index.logExperimentHandler
+    events:
+      - http:
+          path: experiments/log
+          method: post
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
+          authorizer:
+            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
+
+  deleteExperiment:
+    handler: dist/index.deleteExperimentHandler
+    events:
+      - http:
+          path: experiments/delete
+          method: delete
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
+          authorizer:
+            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
+
+  infoExperiment:
+    handler: dist/index.getExperimentInfoHandler
+    events:
+      - http:
+          path: experiments/info
+          method: post
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
+          authorizer:
+            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
+
+  listExperiments:
+    handler: dist/index.listExperimentsHandler
+    events:
+      - http:
+          path: experiments/list
+          method: get
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
+          authorizer:
+            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
+
+  toggleVisibilityExperiment:
+    handler: dist/index.toggleVisibilityExperimentHandler
+    events:
+      - http:
+          path: experiments/togglehide
+          method: post
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
+          authorizer:
+            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
+  finishExperiment:
+    handler: dist/index.finishExperimentHandler
+    events:
+      - http:
+          path: experiments/finish
+          method: post
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
