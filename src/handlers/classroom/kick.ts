@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
-import { getMembershipRecord } from '../../utils/database/fetchMembership';
-import { removeMembershipBothWays } from '../../utils/database/removeMembershipBothWays';
+import { getMembershipRecord } from '../../utils/database/memberships/fetchMembership';
+import { removeMembershipBothWays } from '../../utils/database/memberships/removeMembershipBothWays';
 
 /**
  * POST /classroom/kick

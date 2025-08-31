@@ -1,5 +1,5 @@
 // utils/membership/checkMembership.ts
-import { dobClient } from "./dynamo";
+import { dobClient } from "../dynamo";
 
 // Looks up a membership record in the memberships table
 export const checkUserMembership = async (

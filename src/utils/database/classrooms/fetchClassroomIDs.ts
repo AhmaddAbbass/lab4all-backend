@@ -1,6 +1,6 @@
 
 //fetchClassroomIDs
-import { dobClient } from './dynamo';
+import { dobClient } from '../dynamo';
 // This function returns a list of classroom IDs for a given user ID
 export const getClassroomIDsForUser = async (userID: string): Promise<string[]> => {
   const result = await dobClient.query({

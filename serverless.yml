@@ -142,6 +142,20 @@ functions:
             allowCredentials: false
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
+  refreshJoinCode:
+    handler: dist/index.refreshJoinCodeHandler
+    events:
+      - http:
+          path: classroom/refreshjc
+          method: post
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
+          authorizer:
+            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
   getClassrooms:
     handler: dist/index.getMyClassroomsHandler

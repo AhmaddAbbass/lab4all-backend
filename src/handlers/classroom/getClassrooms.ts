@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
-import { getClassroomIDsForUser } from '../../utils/database/fetchClassroomIDs';
-import { getClassroomByID } from '../../utils/database/fetchClassroomByID';
+import { getClassroomIDsForUser } from '../../utils/database/classrooms/fetchClassroomIDs';
+import { getClassroomByID } from '../../utils/database/classrooms/fetchClassroomByID';
 
 export const getMyClassroomsHandler: APIGatewayProxyHandler = async (event) => {
   const claims = (event.requestContext.authorizer as any)?.claims;

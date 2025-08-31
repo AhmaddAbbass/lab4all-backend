@@ -2,7 +2,7 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { z } from 'zod';
-import { resolveSchool } from '../../utils/database/fetchSchools';
+import { resolveSchool } from '../../utils/database/schools/fetchSchools';
 
 const cognito = new AWS.CognitoIdentityServiceProvider();
 

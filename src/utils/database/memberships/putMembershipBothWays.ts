@@ -1,5 +1,5 @@
 // src/utils/database/putMembershipBothWays.ts
-import { dobClient } from './dynamo';
+import { dobClient } from '../dynamo';
 
 interface PutMembershipBothWaysInput {
   userId: string;

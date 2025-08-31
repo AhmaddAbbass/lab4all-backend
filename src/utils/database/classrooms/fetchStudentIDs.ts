@@ -1,5 +1,5 @@
 //fetchStudentIDs
-import { dobClient } from './dynamo'; // from your v2 SDK setup
+import { dobClient } from '../dynamo'; // from your v2 SDK setup
 
 export const getStudentIDsByClassroom = async (classroomId: string): Promise<string[]> => {
   const PK = `CLASSROOM#${classroomId}`;

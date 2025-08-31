@@ -1,4 +1,4 @@
-import { dobClient } from './dynamo';
+import { dobClient } from '../dynamo';
 
 export const removeMembershipBothWays = async (userSub: string, classroomID: string) => {
   await dobClient.transactWrite({

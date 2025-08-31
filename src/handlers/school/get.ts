@@ -1,6 +1,6 @@
 // src/handlers/school/get.ts
 import { APIGatewayProxyHandler } from 'aws-lambda';
-import { getSchoolById } from '../../utils/database/getSchoolById';
+import { getSchoolById } from '../../utils/database/schools/getSchoolById';
 
 export const getSchoolHandler: APIGatewayProxyHandler = async (event) => {
   const schoolId = event.pathParameters?.schoolId?.trim();

@@ -1,4 +1,4 @@
-import { dobClient } from './dynamo';
+import { dobClient } from '../dynamo';
 
 export const putSchool = async (school: {
   schoolId: string;

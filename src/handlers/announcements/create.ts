@@ -3,7 +3,7 @@ import {
   AnnouncementCreateInput,
   AnnouncementCreateSchema,
 } from "../../schemas/announcements/AnnCreateSchema";
-import { checkUserMembership } from "../../utils/database/checkMembership";
+import { checkUserMembership } from "../../utils/database/memberships/checkMembership";
 import { randomUUID } from "crypto";
 import { extFrom, safeName } from "../../utils/other/files";
 import { AnnouncementItem } from "../../schemas/announcements/AnnItem";

@@ -8,6 +8,7 @@ export { createClassroomHandler } from "./handlers/classroom/create";
 export { joinClassroomHandler } from "./handlers/classroom/join";
 export { getMyClassroomsHandler } from "./handlers/classroom/getClassrooms";
 export { getMembersHandler } from "./handlers/classroom/getMembers";
+export { refreshJoinCodeHandler } from "./handlers/classroom/refreshjc";
 
 export { deleteMembershipHandler } from "./handlers/classroom/leave";
 export { kickStudentHandler } from "./handlers/classroom/kick";

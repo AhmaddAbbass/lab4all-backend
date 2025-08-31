@@ -1,6 +1,6 @@
 // insertMembership
-import { dobClient } from './dynamo';
-import { Membership, MembershipSchema} from '../../schemas/membership';
+import { dobClient } from '../dynamo';
+import { Membership, MembershipSchema} from '../../../schemas/membership';
 
 export const insertMembershipRecord = async (input: unknown): Promise<void> => {
   const result = MembershipSchema.safeParse(input);

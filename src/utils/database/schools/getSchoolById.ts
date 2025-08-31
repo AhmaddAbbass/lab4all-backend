@@ -1,4 +1,4 @@
-import { dobClient } from './dynamo';
+import { dobClient } from '../dynamo';
 
 export const getSchoolById = async (schoolId: string) => {
   const res = await dobClient.get({

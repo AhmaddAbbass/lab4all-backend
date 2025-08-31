@@ -1,7 +1,7 @@
 // src/utils/database/fetchSchools.ts
-import { dobClient } from './dynamo';
-import { toSlug } from '../other/toSlug';
-import { getSchoolById } from './getSchoolById';
+import { dobClient } from "../dynamo";
+import { toSlug } from "../../other/toSlug";
+import { getSchoolById } from "./getSchoolById";
 
 type NextToken = string | undefined;
 
@@ -26,19 +26,23 @@ export const queryByCountryCity = async <T = any>(
   const citySlug = toSlug(city);
   const ccCity = `${cc}#${citySlug}`;
 
-  const res = await dobClient.query({
-    TableName: process.env.SCHOOLS_TABLE!,
-    IndexName: 'countryCityName-index',
-    KeyConditionExpression: '#pk = :pk',
-    ExpressionAttributeNames: { '#pk': 'ccCity' },
-    ExpressionAttributeValues: { ':pk': ccCity },
-    Limit: limit,
-    ExclusiveStartKey: nextToken ? JSON.parse(nextToken) : undefined,
-  }).promise();
+  const res = await dobClient
+    .query({
+      TableName: process.env.SCHOOLS_TABLE!,
+      IndexName: "countryCityName-index",
+      KeyConditionExpression: "#pk = :pk",
+      ExpressionAttributeNames: { "#pk": "ccCity" },
+      ExpressionAttributeValues: { ":pk": ccCity },
+      Limit: limit,
+      ExclusiveStartKey: nextToken ? JSON.parse(nextToken) : undefined,
+    })
+    .promise();
 
   return {
     items: (res.Items as T[]) ?? [],
-    nextToken: res.LastEvaluatedKey ? JSON.stringify(res.LastEvaluatedKey) : undefined,
+    nextToken: res.LastEvaluatedKey
+      ? JSON.stringify(res.LastEvaluatedKey)
+      : undefined,
   };
 };
 
@@ -57,25 +61,29 @@ export const searchByName = async <T = any>(
   const cc = countryCode.toUpperCase();
   const prefix = toSlug(namePrefix);
 
-  const res = await dobClient.query({
-    TableName: process.env.SCHOOLS_TABLE!,
-    IndexName: 'countryName-index',
-    KeyConditionExpression: '#cc = :cc AND begins_with(#nameSlug, :prefix)',
-    ExpressionAttributeNames: {
-      '#cc': 'countryCode',
-      '#nameSlug': 'nameSlug',
-    },
-    ExpressionAttributeValues: {
-      ':cc': cc,
-      ':prefix': prefix,
-    },
-    Limit: limit,
-    ExclusiveStartKey: nextToken ? JSON.parse(nextToken) : undefined,
-  }).promise();
+  const res = await dobClient
+    .query({
+      TableName: process.env.SCHOOLS_TABLE!,
+      IndexName: "countryName-index",
+      KeyConditionExpression: "#cc = :cc AND begins_with(#nameSlug, :prefix)",
+      ExpressionAttributeNames: {
+        "#cc": "countryCode",
+        "#nameSlug": "nameSlug",
+      },
+      ExpressionAttributeValues: {
+        ":cc": cc,
+        ":prefix": prefix,
+      },
+      Limit: limit,
+      ExclusiveStartKey: nextToken ? JSON.parse(nextToken) : undefined,
+    })
+    .promise();
 
   return {
     items: (res.Items as T[]) ?? [],
-    nextToken: res.LastEvaluatedKey ? JSON.stringify(res.LastEvaluatedKey) : undefined,
+    nextToken: res.LastEvaluatedKey
+      ? JSON.stringify(res.LastEvaluatedKey)
+      : undefined,
   };
 };
 
@@ -91,13 +99,13 @@ export const resolveSchool = async (opts: {
   schoolName?: string;
   countryCode?: string;
   city?: string;
-}): Promise<{ school: any | null; reason?: 'NOT_FOUND' | 'AMBIGUOUS' }> => {
+}): Promise<{ school: any | null; reason?: "NOT_FOUND" | "AMBIGUOUS" }> => {
   const { schoolId, schoolName, countryCode, city } = opts;
 
   // 1) Direct ID lookup
   if (schoolId) {
     const found = await getSchoolById(schoolId);
-    return found ? { school: found } : { school: null, reason: 'NOT_FOUND' };
+    return found ? { school: found } : { school: null, reason: "NOT_FOUND" };
   }
 
   // 2) Name-based resolution
@@ -109,8 +117,8 @@ export const resolveSchool = async (opts: {
       const { items } = await queryByCountryCity<any>(countryCode, city, 50);
       const exact = items.filter((s) => s?.nameSlug === targetSlug);
       if (exact.length === 1) return { school: exact[0] };
-      if (exact.length === 0)  return { school: null, reason: 'NOT_FOUND' };
-      return { school: null, reason: 'AMBIGUOUS' };
+      if (exact.length === 0) return { school: null, reason: "NOT_FOUND" };
+      return { school: null, reason: "AMBIGUOUS" };
     }
 
     // Else try country-scoped name search (prefix)
@@ -124,13 +132,16 @@ export const resolveSchool = async (opts: {
       if (items.length === 1) return { school: items[0] };
 
       // None or many → cannot decide
-      return { school: null, reason: items.length === 0 ? 'NOT_FOUND' : 'AMBIGUOUS' };
+      return {
+        school: null,
+        reason: items.length === 0 ? "NOT_FOUND" : "AMBIGUOUS",
+      };
     }
 
     // No country info; we avoid global scans — caller must use /schools first
-    return { school: null, reason: 'AMBIGUOUS' };
+    return { school: null, reason: "AMBIGUOUS" };
   }
 
   // Nothing to resolve
-  return { school: null, reason: 'NOT_FOUND' };
+  return { school: null, reason: "NOT_FOUND" };
 };

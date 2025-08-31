@@ -1,7 +1,7 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { dobClient } from '../../utils/database/dynamo';
 import { toSlug } from '../../utils/other/toSlug';
-import { queryByCountryCity, searchByName } from '../../utils/database/fetchSchools';
+import { queryByCountryCity, searchByName } from '../../utils/database/schools/fetchSchools';
 
 const map = (x: any) => ({
   schoolId: x.schoolId,
