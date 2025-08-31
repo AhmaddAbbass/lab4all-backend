@@ -18,7 +18,7 @@ export const refreshJoinCodeHandler: APIGatewayProxyHandler = async (event) => {
     };
   }
 
-  const classroomID = body.classroomID;
+  const classroomID = body.classId;
   if (!classroomID) {
     return {
       statusCode: 400,
