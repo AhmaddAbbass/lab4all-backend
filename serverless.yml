@@ -54,8 +54,8 @@ provider:
         - arn:aws:dynamodb:${self:provider.region}:529710251073:table/announcements/index/announcementId-index
         - arn:aws:dynamodb:${self:provider.region}:529710251073:table/announcements/index/author-index
         # experiments
-        - arn:aws:dynamodb:${self:provider.region}:529710251073:table/experiments
-        - arn:aws:dynamodb:${self:provider.region}:529710251073:table/experiments/index/userId-index
+        - arn:aws:dynamodb:us-east-1:529710251073:table/experiments
+        - arn:aws:dynamodb:us-east-1:529710251073:table/experiments/index/GSI1
     # Congnito Permissions
     - Effect: Allow
       Action:
