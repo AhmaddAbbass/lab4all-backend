@@ -6,6 +6,7 @@ import {
 import { getExperimentRecord } from "../../utils/database/experiments/getExperiment";
 import { markExperimentFinished } from "../../utils/database/experiments/completeExperiment";
 import { presignPutUrlExp } from "../../utils/s3/s3experiments";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 
 interface Body {
   classId: string; // "hcdev-34343"
@@ -18,28 +19,29 @@ export const logExperimentHandler: APIGatewayProxyHandler = async (event) => {
   if (!claims) {
     return {
       statusCode: 401,
+      headers: DEFAULT_HEADERS,
       body: JSON.stringify({ error: "Unauthorized" }),
     };
   }
   const userId = claims.sub;
   // 2. Check for request body
-  if (!event.body) return { statusCode: 400, body: "Missing body" };
+  if (!event.body) return { statusCode: 400, headers: DEFAULT_HEADERS, body: "Missing body" };
 
   // 3. Input validation
   let parsed: ExperimentLogInput;
   try {
     parsed = ExperimentLogInputSchema.parse(JSON.parse(event.body));
   } catch (err: any) {
-    return { statusCode: 400, body: JSON.stringify({ error: err.errors }) };
+    return { statusCode: 400, headers: DEFAULT_HEADERS, body: JSON.stringify({ error: err.errors }) };
   }
 
   //4. fetch record
 
   const record = await getExperimentRecord(parsed.classId, parsed.experimentId);
-  if (!record) return { statusCode: 404, body: "Experiment not found" };
+  if (!record) return { statusCode: 404, headers: DEFAULT_HEADERS, body: "Experiment not found" };
   // 5. ownership check
   if (record.userId !== `USER#${claims.sub}`) {
-    return { statusCode: 403, body: "Forbidden" }; // only the creator may log
+    return { statusCode: 403, headers: DEFAULT_HEADERS, body: "Forbidden" }; // only the creator may log
   }
   // We will not mark the experiment finished unless the frontend tells us the info what uploading succesddfully. 
   // 6.. generate log-file key + presigned PUT URL
@@ -48,6 +50,7 @@ export const logExperimentHandler: APIGatewayProxyHandler = async (event) => {
 
   return {
     statusCode: 200,
+    headers: DEFAULT_HEADERS,
     body: JSON.stringify({
       message: "After you upload, call experiments/finish",
       uploadUrl,

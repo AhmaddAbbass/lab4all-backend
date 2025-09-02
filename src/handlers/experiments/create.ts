@@ -1,4 +1,5 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 import {
   ExperimentCreateInput,
   ExperimentCreateSchema,
@@ -17,13 +18,20 @@ export const createExperimentHandler: APIGatewayProxyHandler = async (
   if (!claims) {
     return {
       statusCode: 401,
+      headers: DEFAULT_HEADERS,
       body: JSON.stringify({ error: "Unauthorized" }),
     };
   }
   const userId = claims.sub;
 
   // 2. Validate request body
-  if (!event.body) return { statusCode: 400, body: "Missing request body" };
+
+  if (!event.body)
+    return {
+      statusCode: 400,
+      headers: DEFAULT_HEADERS,
+      body: "Missing request body",
+    };
   // 3. Input validation
   let input: ExperimentCreateInput;
   try {
@@ -31,6 +39,7 @@ export const createExperimentHandler: APIGatewayProxyHandler = async (
   } catch (err: any) {
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
       body: JSON.stringify({ error: "Invalid input", details: err.errors }),
     };
   }
@@ -74,22 +83,18 @@ export const createExperimentHandler: APIGatewayProxyHandler = async (
     await insertExperimentRecord(dbItem);
   } catch (err: any) {
     if (err.message === "Pending experiment limit reached")
-      return { statusCode: 409, body: err.message }; // 409 Conflict
+      return { statusCode: 409, headers: DEFAULT_HEADERS, body: err.message }; // 409 Conflict
     console.error("Dynamo error:", err);
-    return { statusCode: 500, body: "Internal error" };
+    return {
+      statusCode: 500,
+      headers: DEFAULT_HEADERS,
+      body: "Internal error",
+    };
   }
 
   return {
     statusCode: 201,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type,Authorization",
-      "X-Content-Type-Options": "nosniff",
-      "X-Frame-Options": "DENY",
-      "Referrer-Policy": "no-referrer-when-downgrade",
-      "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-    },
+    headers: DEFAULT_HEADERS,
     body: JSON.stringify({ experimentId: dbItem.experimentId }),
   };
 };

@@ -1,5 +1,6 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
 import { queryExperiments } from "../../utils/database/experiments/queryExperiments";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 
 export const listExperimentsHandler: APIGatewayProxyHandler = async (event) => {
   try {
@@ -7,6 +8,7 @@ export const listExperimentsHandler: APIGatewayProxyHandler = async (event) => {
     if (!claims) {
       return {
         statusCode: 401,
+        headers: DEFAULT_HEADERS,
         body: JSON.stringify({ error: "Unauthorized" }),
       };
     }
@@ -17,6 +19,7 @@ export const listExperimentsHandler: APIGatewayProxyHandler = async (event) => {
     if (!classId) {
       return {
         statusCode: 400,
+        headers: DEFAULT_HEADERS,
         body: JSON.stringify({ error: "Missing classId" }),
       };
     }
@@ -31,6 +34,7 @@ export const listExperimentsHandler: APIGatewayProxyHandler = async (event) => {
 
     return {
       statusCode: 200,
+      headers: DEFAULT_HEADERS,
       body: JSON.stringify({
         experiments,
         nextCursor, // frontend passes this on next request
@@ -40,6 +44,7 @@ export const listExperimentsHandler: APIGatewayProxyHandler = async (event) => {
     console.error("List experiments error:", err);
     return {
       statusCode: 500,
+      headers: DEFAULT_HEADERS,
       body: JSON.stringify({ error: "Internal server error" }),
     };
   }

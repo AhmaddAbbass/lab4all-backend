@@ -1,6 +1,7 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
 import { getExperimentRecord } from "../../utils/database/experiments/getExperiment";
 import { presignGetUrlExp } from "../../utils/s3/s3experiments";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 
 export const getExperimentInfoHandler: APIGatewayProxyHandler = async (
   event
@@ -11,6 +12,7 @@ export const getExperimentInfoHandler: APIGatewayProxyHandler = async (
     if (!claims) {
       return {
         statusCode: 401,
+        headers: DEFAULT_HEADERS,
         body: JSON.stringify({ error: "Unauthorized" }),
       };
     }
@@ -22,6 +24,7 @@ export const getExperimentInfoHandler: APIGatewayProxyHandler = async (
     } catch {
       return {
         statusCode: 400,
+        headers: DEFAULT_HEADERS,
         body: JSON.stringify({ error: "Invalid JSON body" }),
       };
     }
@@ -30,6 +33,7 @@ export const getExperimentInfoHandler: APIGatewayProxyHandler = async (
     if (!classId || !experimentId) {
       return {
         statusCode: 400,
+        headers: DEFAULT_HEADERS,
         body: JSON.stringify({ error: "Missing classId or experimentId" }),
       };
     }
@@ -39,6 +43,7 @@ export const getExperimentInfoHandler: APIGatewayProxyHandler = async (
     if (!record) {
       return {
         statusCode: 404,
+        headers: DEFAULT_HEADERS,
         body: JSON.stringify({ error: "Experiment not found" }),
       };
     }
@@ -48,12 +53,14 @@ export const getExperimentInfoHandler: APIGatewayProxyHandler = async (
 
     return {
       statusCode: 200,
+      headers: DEFAULT_HEADERS,
       body: JSON.stringify({ url }),
     };
   } catch (err) {
     console.error("Get experiment info error:", err);
     return {
       statusCode: 500,
+      headers: DEFAULT_HEADERS,
       body: JSON.stringify({ error: "Internal server error" }),
     };
   }

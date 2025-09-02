@@ -1,6 +1,7 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
 import { getExperimentRecord } from "../../utils/database/experiments/getExperiment";
 import { toggleExperimentVisibility } from "../../utils/database/experiments/toggleVisibility";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 
 export const toggleVisibilityExperimentHandler: APIGatewayProxyHandler = async (
   event
@@ -11,11 +12,11 @@ export const toggleVisibilityExperimentHandler: APIGatewayProxyHandler = async (
     if (!claims) {
       return {
         statusCode: 401,
+        headers: DEFAULT_HEADERS,
         body: JSON.stringify({ error: "Unauthorized" }),
       };
     }
     const userId = claims.sub;
-
     // 2. Params
     let input: any;
     try {
@@ -23,14 +24,15 @@ export const toggleVisibilityExperimentHandler: APIGatewayProxyHandler = async (
     } catch {
       return {
         statusCode: 400,
+        headers: DEFAULT_HEADERS,
         body: JSON.stringify({ error: "Invalid JSON body" }),
       };
     }
-
     const { classId, experimentId } = input;
     if (!classId || !experimentId) {
       return {
         statusCode: 400,
+        headers: DEFAULT_HEADERS,
         body: JSON.stringify({ error: "Missing classId or experimentId" }),
       };
     }
@@ -40,6 +42,7 @@ export const toggleVisibilityExperimentHandler: APIGatewayProxyHandler = async (
     if (!record) {
       return {
         statusCode: 404,
+        headers: DEFAULT_HEADERS,
         body: JSON.stringify({ error: "Experiment not found" }),
       };
     }
@@ -49,7 +52,11 @@ export const toggleVisibilityExperimentHandler: APIGatewayProxyHandler = async (
     const isTeacher = claims["custom:role"] === "instructor";
 
     if (!isOwner && !isTeacher) {
-      return { statusCode: 403, body: JSON.stringify({ error: "Forbidden" }) };
+      return {
+        statusCode: 403,
+        headers: DEFAULT_HEADERS,
+        body: JSON.stringify({ error: "Forbidden" }),
+      };
     }
 
     const role: "student" | "teacher" = isTeacher ? "teacher" : "student";
@@ -63,12 +70,14 @@ export const toggleVisibilityExperimentHandler: APIGatewayProxyHandler = async (
 
     return {
       statusCode: 200,
+      headers: DEFAULT_HEADERS,
       body: JSON.stringify({ success: true }),
     };
   } catch (err) {
     console.error("Toggle experiment visibility error:", err);
     return {
       statusCode: 500,
+      headers: DEFAULT_HEADERS,
       body: JSON.stringify({ error: "Internal server error" }),
     };
   }

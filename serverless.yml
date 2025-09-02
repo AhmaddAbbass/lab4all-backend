@@ -123,8 +123,13 @@ functions:
             origin: "*"
             headers:
               - Content-Type
+              - X-Amz-Date
               - Authorization
-            allowCredentials: false
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+            allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -138,8 +143,13 @@ functions:
             origin: "*"
             headers:
               - Content-Type
+              - X-Amz-Date
               - Authorization
-            allowCredentials: false
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+            allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
   refreshJoinCode:
@@ -152,8 +162,13 @@ functions:
             origin: "*"
             headers:
               - Content-Type
+              - X-Amz-Date
               - Authorization
-            allowCredentials: false
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+            allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -167,8 +182,13 @@ functions:
             origin: "*"
             headers:
               - Content-Type
+              - X-Amz-Date
               - Authorization
-            allowCredentials: false
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+            allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -182,8 +202,13 @@ functions:
             origin: "*"
             headers:
               - Content-Type
+              - X-Amz-Date
               - Authorization
-            allowCredentials: false
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+            allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -197,8 +222,13 @@ functions:
             origin: "*"
             headers:
               - Content-Type
+              - X-Amz-Date
               - Authorization
-            allowCredentials: false
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+            allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -212,8 +242,13 @@ functions:
             origin: "*"
             headers:
               - Content-Type
+              - X-Amz-Date
               - Authorization
-            allowCredentials: false
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+            allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -228,8 +263,13 @@ functions:
             origin: "*"
             headers:
               - Content-Type
+              - X-Amz-Date
               - Authorization
-            allowCredentials: false
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+            allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -243,8 +283,13 @@ functions:
             origin: "*"
             headers:
               - Content-Type
+              - X-Amz-Date
               - Authorization
-            allowCredentials: false
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+            allowCredentials: true
 
   getSchool:
     handler: dist/index.getSchoolHandler
@@ -256,8 +301,13 @@ functions:
             origin: "*"
             headers:
               - Content-Type
+              - X-Amz-Date
               - Authorization
-            allowCredentials: false
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+            allowCredentials: true
 
   # ---------- Announcements ----------
   createAnnouncement:
@@ -270,8 +320,13 @@ functions:
             origin: "*"
             headers:
               - Content-Type
+              - X-Amz-Date
               - Authorization
-            allowCredentials: false
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+            allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -285,8 +340,13 @@ functions:
             origin: "*"
             headers:
               - Content-Type
+              - X-Amz-Date
               - Authorization
-            allowCredentials: false
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+            allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
   # ---------- Experiment ----------
@@ -320,8 +380,13 @@ functions:
             origin: "*"
             headers:
               - Content-Type
+              - X-Amz-Date
               - Authorization
-            allowCredentials: false
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+            allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -335,8 +400,13 @@ functions:
             origin: "*"
             headers:
               - Content-Type
+              - X-Amz-Date
               - Authorization
-            allowCredentials: false
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+            allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -350,8 +420,13 @@ functions:
             origin: "*"
             headers:
               - Content-Type
+              - X-Amz-Date
               - Authorization
-            allowCredentials: false
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+            allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -365,8 +440,13 @@ functions:
             origin: "*"
             headers:
               - Content-Type
+              - X-Amz-Date
               - Authorization
-            allowCredentials: false
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+            allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
@@ -380,8 +460,13 @@ functions:
             origin: "*"
             headers:
               - Content-Type
+              - X-Amz-Date
               - Authorization
-            allowCredentials: false
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+            allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
   finishExperiment:
@@ -394,8 +479,13 @@ functions:
             origin: "*"
             headers:
               - Content-Type
+              - X-Amz-Date
               - Authorization
-            allowCredentials: false
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+            allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 
