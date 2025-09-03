@@ -26,9 +26,9 @@ provider:
 
     # Presigned URLS TTL:
     SIGNED_URL_TTL: "600"
-    LLM_PROVIDER: "openai"
-    OPENAI_API_KEY: ${env:OPENAI_API_KEY}
-    LLM_MODEL_ID: gpt-4o-mini
+    # LLM_PROVIDER: "openai"
+    # OPENAI_API_KEY: ${env:OPENAI_API_KEY}
+    # LLM_MODEL_ID: gpt-4o-mini
 
   iamRoleStatements:
     # Dynamo permissions
@@ -491,24 +491,24 @@ functions:
             allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
-  freeStep:
-    handler: dist/index.stepHandler
-    events:
-      - http:
-          method: POST
-          path: /free/step
-          cors:
-            origin: "*"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-              - X-Amzn-Trace-Id
-            allowCredentials: true
-          authorizer:
-            arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
+  # freeStep:
+  #   handler: dist/index.stepHandler
+  #   events:
+  #     - http:
+  #         method: POST
+  #         path: /free/step
+  #         cors:
+  #           origin: "*"
+  #           headers:
+  #             - Content-Type
+  #             - X-Amz-Date
+  #             - Authorization
+  #             - X-Api-Key
+  #             - X-Amz-Security-Token
+  #             - X-Amz-User-Agent
+  #             - X-Amzn-Trace-Id
+  #           allowCredentials: true
+  #         authorizer:
+  #           arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
 plugins:
   - serverless-offline
