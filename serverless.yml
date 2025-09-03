@@ -11,6 +11,7 @@ provider:
     # Cognito
     USER_POOL_ID: us-east-1_R8nus0NoJ
     CLIENT_ID: 5ioefbupk9cl6eikb46aqqqn57
+
     # Dynamo tables (use these in code instead of hardcoded names)
     CLASSROOMS_TABLE: classrooms
     MEMBERSHIPS_TABLE: memberships
@@ -21,6 +22,7 @@ provider:
     # Buckets
     ANNOUNCEMENTS_BUCKET: announcements-lab4all
     EXPERIMENTS_BUCKET: experiments-lab4all
+
     # Feature flags (optional)
     STRICT_SCHOOL_SIGNUP: "true"
 
@@ -28,7 +30,7 @@ provider:
     SIGNED_URL_TTL: "600"
 
   iamRoleStatements:
-    # Dynamo permissions
+    # ---------------- DynamoDB permissions ----------------
     - Effect: Allow
       Action:
         - dynamodb:GetItem
@@ -56,18 +58,19 @@ provider:
         # experiments
         - arn:aws:dynamodb:us-east-1:529710251073:table/experiments
         - arn:aws:dynamodb:us-east-1:529710251073:table/experiments/index/GSI1
-    # Congnito Permissions
+
+    # ---------------- Cognito permissions ----------------
     - Effect: Allow
       Action:
         - cognito-idp:SignUp
         - cognito-idp:ConfirmSignUp
         - cognito-idp:InitiateAuth
         - cognito-idp:AdminGetUser
-        - cognito-idp:ListUsers # needed for sub→username resolution
-        - cognito-idp:AdminUpdateUserAttributes # for auto-binding school to instructor
+        - cognito-idp:ListUsers
+        - cognito-idp:AdminUpdateUserAttributes
       Resource: "*"
 
-    # S3 permissions for announcements bucket
+    # ---------------- S3: announcements bucket ----------------
     - Effect: Allow
       Action:
         - s3:PutObject
@@ -75,6 +78,19 @@ provider:
         - s3:DeleteObject
       Resource:
         - arn:aws:s3:::${self:provider.environment.ANNOUNCEMENTS_BUCKET}/*
+
+    # ---------------- S3: experiments bucket (PUT/GET/DELETE) ----------------
+    # Needed by:
+    # - logExperiment: presign PUT (requires PutObject on target key)
+    # - finishExperiment: headObject/existence check (requires GetObject)
+    # - deleteExperiment: delete log object (requires DeleteObject)
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+        - s3:GetObject
+        - s3:DeleteObject
+      Resource:
+        - arn:aws:s3:::${self:provider.environment.EXPERIMENTS_BUCKET}/*
 
 functions:
   # ---------- Auth ----------
@@ -152,6 +168,7 @@ functions:
             allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
+
   refreshJoinCode:
     handler: dist/index.refreshJoinCodeHandler
     events:
@@ -469,6 +486,7 @@ functions:
             allowCredentials: true
           authorizer:
             arn: arn:aws:cognito-idp:${self:provider.region}:529710251073:userpool/${self:provider.environment.USER_POOL_ID}
+
   finishExperiment:
     handler: dist/index.finishExperimentHandler
     events:
