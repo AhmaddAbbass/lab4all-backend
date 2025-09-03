@@ -4,6 +4,34 @@ import { removeMembershipBothWays } from "../../utils/database/memberships/remov
 import { getStudentIDsByClassroom } from "../../utils/database/classrooms/fetchStudentIDs";
 import { deleteClassroomWithMembership } from "../../utils/database/classrooms/deleteClassroomWithMembership";
 
+/*
+deleteMembershipHandler
+
+Handler for DELETE /classroom/membership.
+Allows a user to leave a classroom or, if instructor, delete the classroom.
+
+Flow:
+- Validate Cognito claims → must be authenticated user.
+- Parse body for classroomID.
+- Fetch membership record for (user, classroom).
+- If not found → return 404.
+- If role = student:
+  - Remove membership edges (student ↔ classroom).
+  - Return "Left classroom".
+- If role = instructor:
+  - Check if any students remain in the classroom.
+  - If students exist → return 409 (cannot leave while members present).
+  - If none → delete classroom + instructor membership atomically.
+  - Return "Classroom deleted".
+
+Error codes:
+- 400 → missing classroomID
+- 401 → unauthorized (no claims)
+- 404 → membership not found
+- 409 → instructor cannot leave while students are still members
+- 500 → internal server error
+*/
+
 /**
  * DELETE /classroom/membership
  * Body: { classroomID }

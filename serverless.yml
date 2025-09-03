@@ -9,8 +9,8 @@ provider:
 
   environment:
     # Cognito
-    USER_POOL_ID: us-east-1_R8nus0NoJ
-    CLIENT_ID: 5ioefbupk9cl6eikb46aqqqn57
+    USER_POOL_ID: ""
+    CLIENT_ID: ""
     # Dynamo tables (use these in code instead of hardcoded names)
     CLASSROOMS_TABLE: classrooms
     MEMBERSHIPS_TABLE: memberships

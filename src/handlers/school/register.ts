@@ -7,6 +7,35 @@ import AWS from "aws-sdk";
 
 const cognito = new AWS.CognitoIdentityServiceProvider();
 
+/*
+registerSchoolHandler
+
+Handler for POST /school/register.  
+Allows instructors to register a new school and optionally bind it to their Cognito account.
+
+Flow:
+- AuthN + role check → only instructors can call this endpoint.
+- Parse body with zod schema: { name, countryCode (2 letters), city, schoolId? }.
+- If schoolId not provided, derive from name slug.
+- Compute additional fields for indexing/browse: nameSlug, citySlug, ccCity.
+- Create school record in DynamoDB using putSchool (fail if ID exists).
+- Attempt to auto-bind instructor’s Cognito user with custom:schoolId & custom:school.
+  - If success → boundToUser=true, return note instructing re-login.
+  - If failure → boundToUser=false, school is still created.
+
+Returns:
+- 201 → school created, includes { schoolId, name, countryCode, city, boundToUser, note }.
+- 400 → invalid JSON or input
+- 401 → unauthorized
+- 403 → non-instructor attempt
+- 409 → schoolId already exists
+- 400 (generic) → other Dynamo/Cognito errors
+
+Notes:
+- Ensures canonical uppercase ISO countryCode.
+- Auto-binding step is best-effort; school creation is independent.
+*/
+
 /**
  * POST /school/register
  * Instructor-only.
@@ -56,16 +85,14 @@ export const registerSchoolHandler: APIGatewayProxyHandler = async (event) => {
 
   const { name, countryCode, city, schoolId: providedId } = parsed.data;
 
-  // Normalize & derive fields
   const finalSchoolId = (
     providedId && providedId.trim().length > 0 ? providedId : toSlug(name)
   ).toLowerCase();
   const nameSlug = toSlug(name);
   const citySlug = toSlug(city);
-  const cc = countryCode.toUpperCase(); // ISO-3166 alpha-2 uppercase
+  const cc = countryCode.toUpperCase();
   const ccCity = `${cc}#${citySlug}`;
 
-  // Minimal server-side envelope
   const item = {
     schoolId: finalSchoolId,
     name,

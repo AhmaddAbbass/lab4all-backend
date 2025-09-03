@@ -10,6 +10,32 @@ import {
 } from "../../schemas/experiments/ExpItem";
 import { randomUUID } from "crypto";
 import { insertExperimentRecord } from "../../utils/database/experiments/insertExperiment";
+/*
+createExperimentHandler
+
+Handler for POST /experiments/create.
+Creates a new experiment record for a classroom.
+
+Flow:
+- Validate Cognito claims → must be authenticated user.
+- Parse and validate request body against ExperimentCreateSchema.
+- Generate identifiers:
+  - experimentId = "EXP#<timestamp>#<uuid>"
+  - PK = "CLASS#<classId>", SK = experimentId
+  - owner = "USER#<sub>"
+  - s3Key = "class/<classId>/experiment/<experimentId>/info.txt"
+- Build DynamoDB item (ExperimentItem) with initial flags:
+  - pending = true, hiddenByTeacher = false, hiddenByOwner = false
+- Insert record into DynamoDB (guard prevents too many pending experiments).
+- On success → return experimentId.
+
+Error codes:
+- 400 → missing/invalid body
+- 401 → unauthorized (no claims)
+- 409 → pending experiment limit reached
+- 500 → DynamoDB insert or internal error
+*/
+
 export const createExperimentHandler: APIGatewayProxyHandler = async (
   event
 ) => {

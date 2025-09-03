@@ -5,6 +5,31 @@ import { getExperimentRecord } from "../../utils/database/experiments/getExperim
 import { markExperimentFinished } from "../../utils/database/experiments/completeExperiment";
 import AWS from "aws-sdk";
 import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
+/*
+finishExperimentHandler
+
+Handler for POST /experiments/finish.  
+Finalizes an experiment upload after the client has PUT the info file to S3.
+
+Flow:
+- Validate Cognito claims → must be the experiment owner.
+- Parse request body → requires classId and experimentId.
+- Fetch experiment record from DynamoDB:
+  - Return 404 if not found.
+  - Return 403 if caller is not the owner.
+- Perform a safety check against S3:
+  - headObject ensures the file at record.s3Key exists.
+  - If not found → return 400 "File not uploaded".
+- Mark experiment as finished in DynamoDB (pending=false).
+- Return success response.
+
+Error codes:
+- 400 → missing body, invalid JSON, or file not uploaded
+- 401 → unauthorized (no claims)
+- 403 → forbidden (not experiment owner)
+- 404 → experiment not found
+- 500 → internal error from S3/Dynamo
+*/
 
 const s3 = new AWS.S3();
 

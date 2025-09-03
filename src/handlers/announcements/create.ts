@@ -9,7 +9,29 @@ import { extFrom, safeName } from "../../utils/other/files";
 import { AnnouncementItem } from "../../schemas/announcements/AnnItem";
 import { insertAnnouncementRecord } from "../../utils/database/announcements/insertAnnouncement";
 import { presignPutUrl } from "../../utils/s3/s3announcements";
-// (later you’ll import your utils e.g. insertAnnouncement, makeFileKey, presignPutUrl, etc.)
+
+/*
+createAnnouncementHandler
+
+Handler for POST /announcements/create.
+Instructors use this endpoint to post a new classroom announcement.
+
+Flow:
+- Validate request body with AnnouncementCreateSchema.
+- Verify Cognito claims: must be authenticated instructor and member of class.
+- Generate announcementId and createdAt timestamp.
+- Build S3 keys for body + attachments (body is stable, attachments UUID-prefixed).
+- Insert DynamoDB record:
+  PK = "CLASS#<classId>"
+  SK = "ANNOUNCEMENT#<createdAt>#<announcementId>"
+- Return presigned PUT URLs for all files so the frontend can upload them.
+
+Error codes:
+- 400 → invalid/missing body
+- 401 → missing claims
+- 403 → not instructor or not classroom member
+*/
+
 export const createAnnouncementHandler: APIGatewayProxyHandler = async (
   event
 ) => {
@@ -59,7 +81,6 @@ export const createAnnouncementHandler: APIGatewayProxyHandler = async (
     }
 
     // Ensure user is member of the given classroom
-    // (pseudo util – you’ll implement this separately)
     const isMember = await checkUserMembership(userId, input.classroomId);
 
     if (!isMember) {

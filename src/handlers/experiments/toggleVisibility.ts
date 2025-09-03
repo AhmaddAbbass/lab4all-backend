@@ -3,6 +3,34 @@ import { getExperimentRecord } from "../../utils/database/experiments/getExperim
 import { toggleExperimentVisibility } from "../../utils/database/experiments/toggleVisibility";
 import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 
+/*
+toggleVisibilityExperimentHandler
+
+Handler for POST /experiments/togglehide.  
+Allows either the experiment owner (student) or an instructor to toggle visibility of an experiment.
+
+Flow:
+- Validate Cognito claims → must be authenticated.
+- Parse body → requires classId and experimentId.
+- Fetch experiment record from DynamoDB:
+  - Return 404 if not found.
+- Determine authorization:
+  - Owner can toggle their own experiment.
+  - Instructors can toggle any experiment in the class.
+  - Otherwise → 403 Forbidden.
+- Call toggleExperimentVisibility with role ("student" or "teacher").
+- Return success response.
+
+Error codes:
+- 400 → invalid JSON or missing fields
+- 401 → unauthorized (no claims)
+- 403 → forbidden (not owner or instructor)
+- 404 → experiment not found
+- 500 → internal server error
+
+
+*/
+
 export const toggleVisibilityExperimentHandler: APIGatewayProxyHandler = async (
   event
 ) => {

@@ -1,11 +1,23 @@
 // src/handlers/announcements/fetch.ts
-// -----------------------------------
-// Lambda GET /announcements/fetch?classID=…&k=…&cursor=…
-//
-// 1. Validate query-string input with Zod.
-// 2. Pull next page of announcements (newest → oldest) from Dynamo.
-// 3. Attach presigned GET URLs for each file.
-// 4. Return JSON: { announcements: […], nextCursor }
+/*
+fetchAnnouncementsHandler
+
+Handler for GET /announcements/fetch.
+Returns a paginated list of announcements for a classroom.
+
+Flow:
+- Validate Cognito claims → must be authenticated user.
+- Parse query params with AnnFetchSchema (classID, limit k, cursor).
+- Query DynamoDB (PK="CLASS#<classId>") for announcement items.
+- Map results into AnnouncementResponse:
+  - announcementId, createdAt, authorId, kind, pinned
+  - files with presigned GET URLs (expiresAt calculated).
+- Return announcements array + nextCursor for pagination.
+
+Error codes:
+- 400 → invalid input or query error
+- 401 → missing claims
+*/
 
 import { APIGatewayProxyHandler } from "aws-lambda";
 import { AnnFetchSchema } from "../../schemas/announcements/AnnFetchSchema"; // zod schema

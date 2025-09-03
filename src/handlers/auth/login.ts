@@ -2,6 +2,29 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { z } from 'zod';
+/*
+loginHandler
+
+Handler for POST /auth/login.
+Authenticates a user against Cognito with USER_PASSWORD_AUTH.
+
+Flow:
+- Parse and validate body (email, password).
+- Call Cognito `initiateAuth` with provided credentials.
+- Return AuthenticationResult (IdToken, AccessToken, RefreshToken).
+- Decode IdToken payload to check instructor role:
+  - If instructor has no schoolId → include needsSchoolRegistration=true and note.
+- Map common Cognito errors to HTTP codes:
+  - 401 → INVALID_CREDENTIALS
+  - 403 → USER_NOT_CONFIRMED or PASSWORD_RESET_REQUIRED
+  - 404 → USER_NOT_FOUND
+
+Error codes:
+- 400 → invalid input, invalid JSON, or other Cognito error
+- 401 → wrong email/password
+- 403 → confirmation/reset issues
+- 404 → user not found
+*/
 
 const cognito = new AWS.CognitoIdentityServiceProvider();
 
@@ -56,7 +79,6 @@ export const loginHandler: APIGatewayProxyHandler = async (event) => {
     const auth = res.AuthenticationResult || {};
     const idToken = auth.IdToken as string | undefined;
 
-    // Optional hint: if instructor has no schoolId, nudge them to register a school
     let needsSchoolRegistration = false;
     let note: string | undefined;
     if (idToken) {

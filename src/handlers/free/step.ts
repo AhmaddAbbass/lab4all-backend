@@ -15,6 +15,57 @@ import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 import { checkUserMembership } from "../../utils/database/memberships/checkMembership";
 import { llmStep } from "../../utils/free/llm";
 
+/*
+stepHandler
+
+Handler for POST /free/step.  
+Core entrypoint for "Free Mode" experiments, where each user action is evaluated
+by the LLM and mapped to postAction state updates and UI events.
+
+Responsibilities:
+1. **AuthN/Z**  
+   - Extract Cognito claims from request context.  
+   - Reject if no userId (401 Unauthorized).  
+   - Enforce classroom membership via `checkUserMembership`; reject outsiders (403 FORBIDDEN).
+
+2. **Input Validation**  
+   - Requires JSON body matching `FreeStepRequestSchema`.  
+   - Validates fields: { classroomId, env, action, history[] }.
+
+3. **Quota Enforcement**  
+   - Retrieves per-classroom quota (cents → µUSD) from `CLASSROOMS_TABLE.llmQuotaCents`.  
+   - Fetches current usage row from `LLM_USAGE_TABLE` keyed by (`CLASS#<classId>`, `MO#YYYY-MM`).  
+   - If usage cost ≥ quota, abort with 402 QUOTA_EXCEEDED.
+
+4. **LLM Orchestration**  
+   - Calls `llmStep` util with { env, action, history }.  
+   - Receives { postAction, uiEvents, tokensIn, tokensOut }.  
+   - Applies deterministic cost calculation:  
+     - `inMicro` × tokensIn + `outMicro` × tokensOut = µUSD delta.  
+     - Updates monthly usage counters in DynamoDB via `addUsage`.
+
+5. **Response**  
+   - Validates shape with `FreeStepResponseSchema`.  
+   - Returns envelope { postAction, uiEvents, tokensIn, tokensOut, quotaExceeded? }.  
+   - Ensures consistent CORS/security headers via `DEFAULT_HEADERS`.
+
+6. **Error Handling**  
+   - 400 INVALID_INPUT with zod error details.  
+   - 401 Unauthorized when claims missing.  
+   - 402 Quota exceeded with usage report.  
+   - 403 Forbidden when user not in class.  
+   - 404/500 for not found or internal errors.  
+
+Integration Notes:
+- DynamoDB tables used:
+  - `CLASSROOMS_TABLE`: stores instructor-defined quotas (`llmQuotaCents`).  
+  - `LLM_USAGE_TABLE`: tracks monthly counters (requests, tokensIn, tokensOut, costMicroUSD).  
+- Env vars required:  
+  `TOKENS_IN_PRICE_MICROUSD`, `TOKENS_OUT_PRICE_MICROUSD`,  
+  `CLASS_QUOTA_CENTS_DEFAULT`, `CLASSROOMS_TABLE`, `LLM_USAGE_TABLE`.  
+- Ensures costs scale predictably and usage is auditable at class + month granularity.
+*/
+
 // Dynamo
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 

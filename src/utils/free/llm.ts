@@ -16,6 +16,57 @@ import {
   type UIEvent,
 } from "../../schemas/free/postAction";
 
+/*
+llmStep
+
+Core orchestrator for Free Mode experiment logic.  
+Takes the current environment, a user action, and recent history, and produces
+a minimal PostAction diff + UI events using an LLM call.
+
+Responsibilities:
+1. **Input Validation**
+   - Validates env, action, and last steps with zod schemas (EnvironmentSchema, ActionSchema, PostActionSchema).
+   - Retains only the last 3 history entries for prompt context.
+
+2. **Prompt Construction**
+   - `buildPrompt` constructs system & user messages:
+     - System role describes the simulator rules (UI-first, minimal diffs, constraints).
+     - User message provides structured JSON context: environment, history, newAction, and examples.
+   - Emphasizes constraints: clamp pH to [0,14], no negative values, minimal diffs, no invented entities.
+
+3. **LLM Call**
+   - `callOpenAI` uses `OPENAI_API_KEY` and `LLM_MODEL_ID` (default: gpt-4o-mini).
+   - Sends system+user messages with `response_format: json_object`.
+   - Returns raw JSON string + usage (tokens in/out).
+
+4. **JSON Handling & Normalization**
+   - `extractJson` parses the model output; falls back to substring extraction if malformed.
+   - `normalizeClamp` enforces postconditions:
+     - Clamp pH to valid range.
+     - Reset negative volumes/masses to zero.
+     - Ensure uiEvents array exists.
+
+5. **UI Event Derivation**
+   - `deriveUiEvents` ensures critical UI events always exist:
+     - Add `updatePHMeter` if pH changes but no explicit event provided.
+     - Add `spawnGasBubbles` if transient gas instants appear.
+     - Add `showPrecipitate` if solids introduced.
+   - Prevents frontend from missing key visuals.
+
+6. **Return Envelope**
+   - Returns `{ postAction, uiEvents, tokensIn, tokensOut }`.
+   - Shapes validated against PostActionSchema.
+
+Environment & Config:
+- Requires env var `OPENAI_API_KEY`.  
+- Optional env var `LLM_MODEL_ID`.  
+- Callers may use token counts for quota accounting (tokensIn/tokensOut).  
+
+Integration:
+- Used by `stepHandler` to process free-mode steps.  
+- Ensures that UI-facing diffs are always minimal, plausible, and consistent.
+*/
+
 /** Public API */
 export type LlmStepArgs = {
   env: Environment;
@@ -72,12 +123,12 @@ export async function llmStep(args: LlmStepArgs): Promise<LlmStepOut> {
 /* ───────────────────────── OpenAI call ───────────────────────── */
 
 async function callOpenAI(systemAndUser: { system: string; user: string }) {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
     throw new Error("OPENAI_API_KEY not set in environment");
-    }
-    const model = process.env.LLM_MODEL_ID ?? "gpt-4o-mini";
-    const openai = new OpenAI({ apiKey });
+  }
+  const model = process.env.LLM_MODEL_ID ?? "gpt-4o-mini";
+  const openai = new OpenAI({ apiKey });
 
   const resp = await openai.chat.completions.create({
     model,
