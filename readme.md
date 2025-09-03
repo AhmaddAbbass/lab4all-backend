@@ -9,28 +9,28 @@
 
 Lebanese schools face a persistent gap between science curricula and the resources to teach them: decades of underfunding, the recent economic collapse, and supply-chain volatility have left many labs incomplete, unsafe, or effectively non-functional. Teachers often default to demonstrations while students watch, which erodes hands-on skills and curiosity—especially in public schools.
 
-**Lab4All** turns every student’s laptop into a personal lab bench. In a 3D modeled environment (Babylon.js), teachers can demonstrate an experiment while students run the same steps on their own devices, repeat variations, and actually *practice* the procedure—without the cost, risk, or scheduling bottlenecks of physical labs.
+**Lab4All** turns every student’s laptop into a personal lab bench. In a 3D modeled environment (Babylon.js), teachers can demonstrate an experiment while students run the same steps on their own devices, repeat variations, and actually _practice_ the procedure—without the cost, risk, or scheduling bottlenecks of physical labs.
 
 Core capabilities today:
 
-* **Role-based accounts** (teacher/student) with the right permissions.
-* **Classrooms**: teachers create a class and share a **join code** (rotatable anytime); students join with that code.
-* **Announcements hub**: teachers post announcements with files; students see current and past notices in one place. *(Pin/unpin is on the roadmap.)*
-* **Teacher demos + student practice**: mirror a live demo and let each student run their own copy in parallel.
-* **Student-owned runs**: students create their own experiments (visible to the student by default), try variations, and repeat.
-* **Saved timelines**: each run is stored as a concise timeline of actions and outcomes (revisitable later and storable in S3).
-* **Current prototype**: a 3D **titration** built with Babylon.js where students add quantities, observe immediate feedback, and save the run.
+- **Role-based accounts** (teacher/student) with the right permissions.
+- **Classrooms**: teachers create a class and share a **join code** (rotatable anytime); students join with that code.
+- **Announcements hub**: teachers post announcements with files; students see current and past notices in one place. _(Pin/unpin is on the roadmap.)_
+- **Teacher demos + student practice**: mirror a live demo and let each student run their own copy in parallel.
+- **Student-owned runs**: students create their own experiments (visible to the student by default), try variations, and repeat.
+- **Saved timelines**: each run is stored as a concise timeline of actions and outcomes (revisitable later and storable in S3).
+- **Current prototype**: a 3D **titration** built with Babylon.js where students add quantities, observe immediate feedback, and save the run.
 
-**Free Mode** — a *UI-first* chemistry sandbox driven by an LLM. The model returns **minimal diffs** (“post-actions”) the UI can merge directly—pH changes, gas bubbles, precipitate flags, instrument readings—so scenes update instantly without a heavy chemistry engine. The backend meters a **per-class LLM quota** based on prompt/completion token costs to keep usage predictable.
+**Free Mode** — a _UI-first_ chemistry sandbox driven by an LLM. The model returns **minimal diffs** (“post-actions”) the UI can merge directly—pH changes, gas bubbles, precipitate flags, instrument readings—so scenes update instantly without a heavy chemistry engine. The backend meters a **per-class LLM quota** based on prompt/completion token costs to keep usage predictable.
 
 ## Stack
 
-* **API**: API Gateway (HTTP) → AWS Lambda (Node.js 22, TypeScript → `dist/`) via Serverless Framework
-* **Auth**: Amazon Cognito (IdToken, claims: `sub`, `email`, `custom:role`, `custom:schoolId`, `custom:grade`)
-* **Data**: DynamoDB (`classrooms`, `memberships`, `schools`, `announcements`, `experiments`, **`llm_usage`**)
-* **Files**: S3 (`ANNOUNCEMENTS_BUCKET`, `EXPERIMENTS_BUCKET`)
-* **Secrets**: AWS Secrets Manager (OpenAI key)
-* **Local Dev**: `serverless-offline`
+- **API**: API Gateway (HTTP) → AWS Lambda (Node.js 22, TypeScript → `dist/`) via Serverless Framework
+- **Auth**: Amazon Cognito (IdToken, claims: `sub`, `email`, `custom:role`, `custom:schoolId`, `custom:grade`)
+- **Data**: DynamoDB (`classrooms`, `memberships`, `schools`, `announcements`, `experiments`, **`llm_usage`**)
+- **Files**: S3 (`ANNOUNCEMENTS_BUCKET`, `EXPERIMENTS_BUCKET`)
+- **Secrets**: AWS Secrets Manager (OpenAI key)
+- **Local Dev**: `serverless-offline`
 
 ---
 
@@ -38,9 +38,9 @@ Core capabilities today:
 
 **Prereqs**
 
-* Node.js ≥ 18
-* AWS CLI configured
-* Serverless Framework (`npm i -g serverless`) — or use `npx serverless …`
+- Node.js ≥ 18
+- AWS CLI configured
+- Serverless Framework (`npm i -g serverless`) — or use `npx serverless …`
 
 **Run**
 
@@ -51,12 +51,6 @@ npm install
 npm run build
 npx serverless offline
 # => API at http://localhost:3000
-```
-
-**Deploy**
-
-```bash
-npx serverless deploy
 ```
 
 > For protected routes you’ll need a valid Cognito **IdToken** (from `/auth/login`).
@@ -131,27 +125,27 @@ src/
 
 ## Data Model (DynamoDB)
 
-* **classrooms**: `classroomID` (PK), `classroomName`, `schoolId`, `teacherId`, `joinCode`, *(optional)* `llmQuotaCents`
+- **classrooms**: `classroomID` (PK), `classroomName`, `schoolId`, `teacherId`, `joinCode`, _(optional)_ `llmQuotaCents`
   GSI: `joinCode-index`
-* **memberships**: edges stored both ways
+- **memberships**: edges stored both ways
   `PK="USER#<sub>"`, `SK="CLASSROOM#<classroomID>"` and `PK="CLASSROOM#<classroomID>"`, `SK="USER#<sub>"`
-* **schools**: directory & indexes for name/country/city search
-* **announcements**: `PK="CLASS#<classId>"`, `SK="ANNOUNCEMENT#<createdAt>#<announcementId>"`
-* **experiments**: `PK="CLASS#<classId>"`, `SK="EXP#<createdAtISO>#<uuid>"`
+- **schools**: directory & indexes for name/country/city search
+- **announcements**: `PK="CLASS#<classId>"`, `SK="ANNOUNCEMENT#<createdAt>#<announcementId>"`
+- **experiments**: `PK="CLASS#<classId>"`, `SK="EXP#<createdAtISO>#<uuid>"`
   S3 key: `class/<classId>/experiment/<experimentId>/info.txt`
-* **llm\_usage** (NEW): monthly per-class counters
+- **llm_usage** (NEW): monthly per-class counters
   `PK="CLASS#<classroomId>"`, `SK="MO#<YYYY-MM>"`, fields: `requests`, `tokensIn`, `tokensOut`, `costMicroUSD`
 
 ---
 
 ## Buckets & Keys
 
-* **Announcements**
+- **Announcements**
   `announcements/class/<classId>/ann/<announcementId>/body.<ext>`
   `announcements/class/<classId>/ann/<announcementId>/files/<uuid>_<safeName>`
-* **Experiments**
+- **Experiments**
   `class/<classId>/experiment/<experimentId>/info.txt`
-  *(Optional Free Mode artifact: `timeline.json` can follow same location pattern.)*
+  _(Optional Free Mode artifact: `timeline.json` can follow same location pattern.)_
 
 ---
 
@@ -159,27 +153,29 @@ src/
 
 **What it does**
 
-* FE sends an **action** (e.g., “add 20 mL HCl to Beaker1”), the **current environment snapshot**, and a **history** array.
-* BE calls the LLM and returns:
+- FE sends an **action** (e.g., “add 20 mL HCl to Beaker1”), the **current environment snapshot**, and a **history** array.
+- BE calls the LLM and returns:
 
-  * a **minimal `postAction` diff** to merge,
-  * **`uiEvents`** (e.g., `updatePHMeter`, `spawnGasBubbles`),
-  * token usage (`tokensIn`, `tokensOut`) and `quotaExceeded` if relevant.
-* BE charges the class’s monthly LLM **quota** (µUSD from token counts).
+  - a **minimal `postAction` diff** to merge,
+  - **`uiEvents`** (e.g., `updatePHMeter`, `spawnGasBubbles`),
+  - token usage (`tokensIn`, `tokensOut`) and `quotaExceeded` if relevant.
+
+- BE charges the class’s monthly LLM **quota** (µUSD from token counts).
 
 **Principles**
 
-* **UI-first**, plausible effects (no full stoichiometry).
-* **Clamp safety**: `pH ∈ [0,14]`, non-negative volumes, finite numbers.
-* **Deterministic shape**: don’t invent containers/tools; only update what exists.
+- **UI-first**, plausible effects (no full stoichiometry).
+- **Clamp safety**: `pH ∈ [0,14]`, non-negative volumes, finite numbers.
+- **Deterministic shape**: don’t invent containers/tools; only update what exists.
+
 ---
 
 ## Why Free Mode is exciting
 
-* **Zero-friction lab play**: students can *try things* without heavy chemistry engines.
-* **Deterministic UI contract**: backend returns **diffs** + **uiEvents**, so the FE can update visuals instantly.
-* **Cost-aware**: per-class quota prevents surprise bills; token metering is transparent on every response.
-* **Extensible**: new actions or visual effects are schema-driven — no DB migration needed.
+- **Zero-friction lab play**: students can _try things_ without heavy chemistry engines.
+- **Deterministic UI contract**: backend returns **diffs** + **uiEvents**, so the FE can update visuals instantly.
+- **Cost-aware**: per-class quota prevents surprise bills; token metering is transparent on every response.
+- **Extensible**: new actions or visual effects are schema-driven — no DB migration needed.
 
 ---
 
@@ -187,14 +183,13 @@ src/
 
 # API Reference — Postman-style
 
-> **Auth header for protected routes**: `Authorization: Bearer <IdToken>`
-> **Naming note:** Prefer **`classroomId`** on request surfaces (DB keeps `classroomID`). Some legacy routes accept `classID`.
+> **Auth header for protected routes**: `Authorization: Bearer <IdToken>` > **Naming note:** Prefer **`classroomId`** on request surfaces (DB keeps `classroomID`). Some legacy routes accept `classID`.
 
 ---
 
 ## 1) Auth
 
-### POST `/auth/register`  *(Public)*
+### POST `/auth/register` _(Public)_
 
 **Request body**
 
@@ -227,7 +222,7 @@ src/
 
 ---
 
-### POST `/auth/confirm`  *(Public)*
+### POST `/auth/confirm` _(Public)_
 
 **Request body**
 
@@ -243,7 +238,7 @@ src/
 
 ---
 
-### POST `/auth/login`  *(Public)*
+### POST `/auth/login` _(Public)_
 
 **Request body**
 
@@ -270,7 +265,7 @@ src/
 
 ---
 
-### GET `/auth/profile`  *(Bearer)*
+### GET `/auth/profile` _(Bearer)_
 
 **Response**
 
@@ -291,15 +286,15 @@ src/
 
 ## 2) Schools
 
-### GET `/schools`  *(Public)*
+### GET `/schools` _(Public)_
 
 **Query param variants**
 
-* Global alphabetical: *(no params)*
-* Typeahead: `?q=academy`
-* Country: `?countryCode=LB`
-* Country + q: `?countryCode=LB&q=academy`
-* Country + city: `?countryCode=LB&city=beirut`
+- Global alphabetical: _(no params)_
+- Typeahead: `?q=academy`
+- Country: `?countryCode=LB`
+- Country + q: `?countryCode=LB&q=academy`
+- Country + city: `?countryCode=LB&city=beirut`
 
 **200**
 
@@ -314,7 +309,7 @@ src/
 
 ---
 
-### GET `/schools/{schoolId}`  *(Public)*
+### GET `/schools/{schoolId}` _(Public)_
 
 **200**
 
@@ -331,7 +326,7 @@ src/
 
 ---
 
-### POST `/school/register`  *(Instructor only)*
+### POST `/school/register` _(Instructor only)_
 
 **Request body**
 
@@ -363,7 +358,7 @@ src/
 
 ## 3) Classroom
 
-### POST `/classroom/create`  *(Instructor)*
+### POST `/classroom/create` _(Instructor)_
 
 **Request body**
 
@@ -374,12 +369,16 @@ src/
 **201**
 
 ```json
-{ "message": "Classroom created", "classroomID": "cls_123", "joinCode": "K7Q3ZP" }
+{
+  "message": "Classroom created",
+  "classroomID": "cls_123",
+  "joinCode": "K7Q3ZP"
+}
 ```
 
 ---
 
-### GET `/classroom/list`  *(Bearer)*
+### GET `/classroom/list` _(Bearer)_
 
 **200**
 
@@ -400,7 +399,7 @@ src/
 
 ---
 
-### POST `/classroom/members`  *(Bearer)*
+### POST `/classroom/members` _(Bearer)_
 
 **Request body**
 
@@ -413,14 +412,19 @@ src/
 ```json
 {
   "members": [
-    { "userId": "u1", "firstName": "Ali", "lastName": "Slim", "role": "student" }
+    {
+      "userId": "u1",
+      "firstName": "Ali",
+      "lastName": "Slim",
+      "role": "student"
+    }
   ]
 }
 ```
 
 ---
 
-### POST `/classroom/join`  *(Bearer)*
+### POST `/classroom/join` _(Bearer)_
 
 **Request body**
 
@@ -438,7 +442,7 @@ src/
 
 ---
 
-### POST `/classroom/kick`  *(Instructor member)*
+### POST `/classroom/kick` _(Instructor member)_
 
 **Request body**
 
@@ -454,7 +458,7 @@ src/
 
 ---
 
-### DELETE `/classroom/membership`  *(Bearer)*
+### DELETE `/classroom/membership` _(Bearer)_
 
 **Request body**
 
@@ -476,7 +480,7 @@ src/
 
 ---
 
-### POST `/classroom/refreshjc`  *(Owner)*
+### POST `/classroom/refreshjc` _(Owner)_
 
 > **Note:** request uses `classId` (lower-cased “d”) in legacy code.
 > **Request body**
@@ -495,7 +499,7 @@ src/
 
 ## 4) Announcements
 
-### POST `/announcements/create`  *(Instructor member)*
+### POST `/announcements/create` _(Instructor member)_
 
 **Request body**
 
@@ -503,8 +507,16 @@ src/
 {
   "classroomId": "cls_123",
   "filesMeta": [
-    { "role": "body", "filename": "announcement.md", "contentType": "text/markdown" },
-    { "role": "attachment", "filename": "lab-guide.pdf", "contentType": "application/pdf" }
+    {
+      "role": "body",
+      "filename": "announcement.md",
+      "contentType": "text/markdown"
+    },
+    {
+      "role": "attachment",
+      "filename": "lab-guide.pdf",
+      "contentType": "application/pdf"
+    }
   ]
 }
 ```
@@ -524,7 +536,7 @@ src/
 
 ---
 
-### GET `/announcements/fetch`  *(Bearer)*
+### GET `/announcements/fetch` _(Bearer)_
 
 **Query params (current)**: `classID=cls_123&k=10&cursor=<opaque>`
 **Recommended**: `classroomId=cls_123` (migration in next patch)
@@ -560,7 +572,7 @@ src/
 
 ## 5) Experiments
 
-### POST `/experiments/create`  *(Bearer — ensure membership)*
+### POST `/experiments/create` _(Bearer — ensure membership)_
 
 **Request body**
 
@@ -581,7 +593,7 @@ src/
 
 ---
 
-### POST `/experiments/log`  *(Owner)*
+### POST `/experiments/log` _(Owner)_
 
 **Request body**
 
@@ -601,7 +613,7 @@ src/
 
 ---
 
-### POST `/experiments/finish`  *(Owner)*
+### POST `/experiments/finish` _(Owner)_
 
 **Request body**
 
@@ -617,7 +629,7 @@ src/
 
 ---
 
-### POST `/experiments/info`  *(Bearer — restrict to owner/teacher)*
+### POST `/experiments/info` _(Bearer — restrict to owner/teacher)_
 
 **Request body**
 
@@ -633,7 +645,7 @@ src/
 
 ---
 
-### GET `/experiments/list`  *(Bearer — ensure membership)*
+### GET `/experiments/list` _(Bearer — ensure membership)_
 
 **Query params**: `classId=cls_123&k=10&cursor=<opaque>`
 **200**
@@ -658,7 +670,7 @@ src/
 
 ---
 
-### DELETE `/experiments/delete`  *(Owner)*
+### DELETE `/experiments/delete` _(Owner)_
 
 **Request body**
 
@@ -674,7 +686,7 @@ src/
 
 ---
 
-### POST `/experiments/togglehide`  *(Owner/Instructor — ensure membership)*
+### POST `/experiments/togglehide` _(Owner/Instructor — ensure membership)_
 
 **Request body**
 
@@ -694,7 +706,7 @@ src/
 
 ## 6) Free Mode
 
-### POST `/free/step`  *(Bearer — membership + quota)*
+### POST `/free/step` _(Bearer — membership + quota)_
 
 **Request body**
 
@@ -712,7 +724,12 @@ src/
     },
     "attachedTools": ["pHmeter1"]
   },
-  "action": { "type": "add", "material": "HCl", "amount": { "value": 20, "unit": "mL" }, "target": "Beaker1" },
+  "action": {
+    "type": "add",
+    "material": "HCl",
+    "amount": { "value": 20, "unit": "mL" },
+    "target": "Beaker1"
+  },
   "history": []
 }
 ```
@@ -734,11 +751,19 @@ src/
     },
     "tools": { "pHmeter1": { "reading": 3 } },
     "uiEvents": [
-      { "path": "properties.pH", "effect": "updatePHMeter", "payload": { "reading": 3 } }
+      {
+        "path": "properties.pH",
+        "effect": "updatePHMeter",
+        "payload": { "reading": 3 }
+      }
     ]
   },
   "uiEvents": [
-    { "path": "properties.pH", "effect": "updatePHMeter", "payload": { "reading": 3 } }
+    {
+      "path": "properties.pH",
+      "effect": "updatePHMeter",
+      "payload": { "reading": 3 }
+    }
   ],
   "tokensIn": 180,
   "tokensOut": 42,
@@ -746,13 +771,17 @@ src/
 }
 ```
 
-**402 — QUOTA\_EXCEEDED**
+**402 — QUOTA_EXCEEDED**
 
 ```json
 {
   "error": "QUOTA_EXCEEDED",
   "quotaExceeded": true,
-  "usage": { "costMicroUSD": 4980000, "quotaMicroUSD": 5000000, "month": "MO#2025-09" }
+  "usage": {
+    "costMicroUSD": 4980000,
+    "quotaMicroUSD": 5000000,
+    "month": "MO#2025-09"
+  }
 }
 ```
 
@@ -773,7 +802,7 @@ src/
 }
 ```
 
-### `free/environment.ts`  — **Environment**
+### `free/environment.ts` — **Environment**
 
 ```json
 {
@@ -795,10 +824,15 @@ src/
 }
 ```
 
-### `free/action.ts`  — **Action (discriminated union)**
+### `free/action.ts` — **Action (discriminated union)**
 
 ```json
-{ "type": "add", "material": "HCl", "amount": { "value": 20, "unit": "mL" }, "target": "Beaker1" }
+{
+  "type": "add",
+  "material": "HCl",
+  "amount": { "value": 20, "unit": "mL" },
+  "target": "Beaker1"
+}
 ```
 
 ```json
@@ -806,17 +840,25 @@ src/
 ```
 
 ```json
-{ "type": "stir", "target": "Beaker1", "duration": { "value": 10, "unit": "s" } }
+{
+  "type": "stir",
+  "target": "Beaker1",
+  "duration": { "value": 10, "unit": "s" }
+}
 ```
 
-### `free/postAction.ts`  — **PostAction (minimal diff)**
+### `free/postAction.ts` — **PostAction (minimal diff)**
 
 ```json
 {
   "environment": { "id": "Beaker1", "properties": { "pH": 3 } },
   "tools": { "pHmeter1": { "reading": 3 } },
   "uiEvents": [
-    { "path": "properties.pH", "effect": "updatePHMeter", "payload": { "reading": 3 } }
+    {
+      "path": "properties.pH",
+      "effect": "updatePHMeter",
+      "payload": { "reading": 3 }
+    }
   ]
 }
 ```
@@ -845,14 +887,14 @@ src/
 ```json
 {
   "postAction": { "...": "PostAction" },
-  "uiEvents": [ { "...": "UIEvent" } ],
+  "uiEvents": [{ "...": "UIEvent" }],
   "tokensIn": 0,
   "tokensOut": 0,
   "quotaExceeded": false
 }
 ```
 
-### `free/setup.ts`  — **Setup**
+### `free/setup.ts` — **Setup**
 
 ```json
 {
@@ -861,17 +903,17 @@ src/
     "NaCl": { "stock": {} }
   },
   "tools": ["pHmeter1", "Thermometer1"],
-  "environments": [ { "...": "Environment" } ]
+  "environments": [{ "...": "Environment" }]
 }
 ```
 
-### `free/timeline.ts`  — **Timeline**
+### `free/timeline.ts` — **Timeline**
 
 ```json
 {
   "setup": { "...": "Setup" },
   "environments": { "Beaker1": { "...": "Environment" } },
-  "history": [ { "action": {}, "result": {}, "timestamp": "..." } ]
+  "history": [{ "action": {}, "result": {}, "timestamp": "..." }]
 }
 ```
 
@@ -882,7 +924,11 @@ src/
 ### `announcements/FileMetaSchema.ts`
 
 ```json
-{ "role": "body", "filename": "announcement.md", "contentType": "text/markdown" }
+{
+  "role": "body",
+  "filename": "announcement.md",
+  "contentType": "text/markdown"
+}
 ```
 
 ### `announcements/AnnCreateSchema.ts`
@@ -890,7 +936,7 @@ src/
 ```json
 {
   "classroomId": "cls_123",
-  "filesMeta": [ { "...": "FileMeta" } ]
+  "filesMeta": [{ "...": "FileMeta" }]
 }
 ```
 
@@ -900,7 +946,7 @@ src/
 { "classID": "cls_123", "k": 10, "cursor": "opaque" }
 ```
 
-*(Recommended new surface: `{ "classroomId": "cls_123", "k": 10, "cursor": "..." }`)*
+_(Recommended new surface: `{ "classroomId": "cls_123", "k": 10, "cursor": "..." }`)_
 
 ### `announcements/AnnItem.ts`
 
@@ -912,7 +958,14 @@ src/
   "authorId": "teacher-sub",
   "kind": "teacher",
   "pinned": false,
-  "files": [ { "role": "body", "key": "announcements/.../body.md", "filename": "announcement.md", "contentType": "text/markdown" } ]
+  "files": [
+    {
+      "role": "body",
+      "key": "announcements/.../body.md",
+      "filename": "announcement.md",
+      "contentType": "text/markdown"
+    }
+  ]
 }
 ```
 
@@ -920,7 +973,7 @@ src/
 
 ```json
 {
-  "announcements": [ { "...": "AnnItem with presigned GET urls" } ],
+  "announcements": [{ "...": "AnnItem with presigned GET urls" }],
   "nextCursor": null
 }
 ```
@@ -966,7 +1019,7 @@ src/
 
 ## D) Core
 
-### `schemas/classroom.ts`  — **Classroom**
+### `schemas/classroom.ts` — **Classroom**
 
 ```json
 {
@@ -982,7 +1035,7 @@ src/
 }
 ```
 
-### `schemas/membership.ts`  — **Membership edges**
+### `schemas/membership.ts` — **Membership edges**
 
 ```json
 {
@@ -993,7 +1046,7 @@ src/
 }
 ```
 
-### `schemas/school.ts`  — **School**
+### `schemas/school.ts` — **School**
 
 ```json
 {
@@ -1014,35 +1067,88 @@ src/
 
 ## Security model
 
-* Cognito IdToken → handlers read claims via API Gateway authorizer.
-* School boundary enforced at `/classroom/join`.
-* Membership is checked for most mutations; strengthen on:
+- Cognito IdToken → handlers read claims via API Gateway authorizer.
+- School boundary enforced at `/classroom/join`.
+- Membership is checked for most mutations; strengthen on:
 
-  * `/announcements/fetch` (add check),
-  * `/experiments/{create,list,info,togglehide}` (ensure check).
-* Free Mode uses a **monthly** per-class budget:
+  - `/announcements/fetch` (add check),
+  - `/experiments/{create,list,info,togglehide}` (ensure check).
 
-  * **Pre-check**: block if `costMicroUSD >= quota`.
-  * **Post-update**: atomic `ADD` counters (`requests`, `tokensIn`, `tokensOut`, `costMicroUSD`).
-  * Responds with `quotaExceeded: true` when the current step crosses the limit.
-* OpenAI API key is read from **Secrets Manager** (`LLM_SECRET_ARN`).
+- Free Mode uses a **monthly** per-class budget:
+
+  - **Pre-check**: block if `costMicroUSD >= quota`.
+  - **Post-update**: atomic `ADD` counters (`requests`, `tokensIn`, `tokensOut`, `costMicroUSD`).
+  - Responds with `quotaExceeded: true` when the current step crosses the limit.
+
+- OpenAI API key is read from **Secrets Manager** (`LLM_SECRET_ARN`).
 
 ---
 
 ## IAM notes
 
-* **S3**: Allow `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject` for both `${ANNOUNCEMENTS_BUCKET}/*` and `${EXPERIMENTS_BUCKET}/*`.
-* **DynamoDB**: Allow `GetItem`, `PutItem`, `UpdateItem`, `Query`, `DeleteItem` on all listed tables; **include** `llm_usage`.
-* **Secrets Manager**: Allow `secretsmanager:GetSecretValue` on `${LLM_SECRET_ARN}`.
+- **S3**: Allow `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject` for both `${ANNOUNCEMENTS_BUCKET}/*` and `${EXPERIMENTS_BUCKET}/*`.
+- **DynamoDB**: Allow `GetItem`, `PutItem`, `UpdateItem`, `Query`, `DeleteItem` on all listed tables; **include** `llm_usage`.
+- **Secrets Manager**: Allow `secretsmanager:GetSecretValue` on `${LLM_SECRET_ARN}`.
 
+## Deployed API (Dev)
+
+The backend is **deployed and live** on AWS.
+**Stack:** `lab4all-auth-dev` (us-east-1)
+**Base URL:** `https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev`
+**Auth:** Protected routes require `Authorization: Bearer <Cognito IdToken>`.
+
+### Endpoints
+
+#### Auth
+
+- **POST** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/auth/register](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/auth/register)
+- **POST** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/auth/login](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/auth/login)
+- **GET** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/auth/profile](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/auth/profile)
+- **POST** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/auth/confirm](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/auth/confirm)
+
+#### Classroom
+
+- **POST** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/classroom/create](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/classroom/create)
+- **POST** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/classroom/join](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/classroom/join)
+- **POST** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/classroom/refreshjc](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/classroom/refreshjc)
+- **GET** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/classroom/list](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/classroom/list)
+- **POST** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/classroom/members](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/classroom/members)
+- **DELETE** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/classroom/membership](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/classroom/membership)
+- **POST** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/classroom/kick](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/classroom/kick)
+
+#### Schools
+
+- **POST** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/school/register](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/school/register)
+- **GET** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/schools](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/schools)
+- **GET** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/schools/{schoolId}](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/schools/{schoolId})
+
+#### Announcements
+
+- **POST** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/announcements/create](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/announcements/create)
+- **GET** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/announcements/fetch](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/announcements/fetch)
+
+#### Experiments
+
+- **POST** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/experiments/create](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/experiments/create)
+- **POST** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/experiments/log](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/experiments/log)
+- **DELETE** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/experiments/delete](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/experiments/delete)
+- **POST** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/experiments/info](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/experiments/info)
+- **GET** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/experiments/list](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/experiments/list)
+- **POST** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/experiments/togglehide](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/experiments/togglehide)
+- **POST** — [https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/experiments/finish](https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev/experiments/finish)
+
+### Lambda Functions (deployed)
+
+`signup`, `login`, `profile`, `confirm`,
+`createClassroom`, `joinClassroom`, `refreshJoinCode`, `getClassrooms`, `getMembers`, `deleteMembership`, `kickStudent`,
+`registerSchool`, `listSchools`, `getSchool`,
+`createAnnouncement`, `fetchAnnouncements`,
+`createExperiment`, `logExperiment`, `deleteExperiment`, `infoExperiment`, `listExperiments`, `toggleVisibilityExperiment`, `finishExperiment`.
 
 ## Known gaps / Next steps
 
-* Enforce classroom membership for **announcement fetch** and some **experiment** routes.
-* Fix `togglehide` to pass the computed role (“teacher” vs “student”).
-* Normalize request inputs to **`classroomId`** everywhere (DB remains `classroomID`).
-* Basic rate limiting & size caps; structured logs/metrics; pin/unpin announcements.
-* Frontend integration for Free Mode merge rules and UI event handling.
-
-
-
+- Enforce classroom membership for **announcement fetch** and some **experiment** routes.
+- Fix `togglehide` to pass the computed role (“teacher” vs “student”).
+- Normalize request inputs to **`classroomId`** everywhere (DB remains `classroomID`).
+- Basic rate limiting & size caps; structured logs/metrics; pin/unpin announcements.
+- Frontend integration for Free Mode merge rules and UI event handling.
