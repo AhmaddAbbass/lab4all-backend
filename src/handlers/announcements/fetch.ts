@@ -1,11 +1,4 @@
-// src/handlers/announcements/fetch.ts
-// -----------------------------------
-// Lambda GET /announcements/fetch?classID=…&k=…&cursor=…
-//
-// 1. Validate query-string input with Zod.
-// 2. Pull next page of announcements (newest → oldest) from Dynamo.
-// 3. Attach presigned GET URLs for each file.
-// 4. Return JSON: { announcements: […], nextCursor }
+// src/handlers/announcements/fetch.t
 
 import { APIGatewayProxyHandler } from "aws-lambda";
 import { AnnFetchSchema } from "../../schemas/announcements/AnnFetchSchema"; // zod schema
@@ -14,7 +7,26 @@ import { presignGetUrl } from "../../utils/s3/s3announcements"; // v2 helper
 import type { AnnouncementResponse } from "../../schemas/announcements/AnnResponse";
 import type { AnnouncementItem as AnnItem } from "../../schemas/announcements/AnnItem";
 
-/** Seconds → ISO string for “expiresAt” */
+/*
+fetchAnnouncementsHandler
+
+Handler for GET /announcements/fetch.
+Returns a paginated list of announcements for a classroom.
+
+Flow:
+- Validate Cognito claims → must be authenticated user.
+- Parse query params with AnnFetchSchema (classID, limit k, cursor).
+- Query DynamoDB (PK="CLASS#<classId>") for announcement items.
+- Map results into AnnouncementResponse:
+  - announcementId, createdAt, authorId, kind, pinned
+  - files with presigned GET URLs (expiresAt calculated).
+- Return announcements array + nextCursor for pagination.
+
+Error codes:
+- 400 → invalid input or query error
+- 401 → missing claims
+*/
+
 const signedUrlTTL = Number(process.env.SIGNED_URL_TTL ?? "600");
 const calcExpiresAt = () =>
   new Date(Date.now() + signedUrlTTL * 1_000).toISOString();

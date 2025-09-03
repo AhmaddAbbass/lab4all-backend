@@ -1,18 +1,36 @@
-import { APIGatewayProxyHandler } from 'aws-lambda';
-import {z} from 'zod';
-import { getClassroomByJoinCode } from '../../utils/database/classrooms/fetchClassroomByJC';
-import { insertMembershipRecord} from '../../utils/database/memberships/insertMembership';
-import { getMembershipRecord } from '../../utils/database/memberships/fetchMembership';
-import { MembershipSchema } from '../../schemas/membership';
+import { APIGatewayProxyHandler } from "aws-lambda";
+import { z } from "zod";
+import { getClassroomByJoinCode } from "../../utils/database/classrooms/fetchClassroomByJC";
+import { insertMembershipRecord } from "../../utils/database/memberships/insertMembership";
+import { getMembershipRecord } from "../../utils/database/memberships/fetchMembership";
+import { MembershipSchema } from "../../schemas/membership";
 
 /*
-  Assumptions:
-  - GSI on joinCode allows efficient lookup
-  - Membership table stores bidirectional PK/SK
+joinClassroomHandler
+
+Handler for POST /classroom/join.
+Allows a student to join a classroom using a joinCode.
+
+Flow:
+- Validate Cognito claims → must be authenticated user.
+- Parse request body (joinCode).
+- Lookup classroom by joinCode (via GSI).
+- Ensure classroom exists and matches joinCode.
+- Verify student’s schoolId matches classroom’s schoolId.
+- Check if membership already exists.
+- If not, create bidirectional membership records (USER→CLASSROOM, CLASSROOM→USER).
+- Return success message.
+
+Error codes:
+- 400 → invalid request body
+- 401 → unauthorized (no claims)
+- 403 → invalid join code or different school
+- 409 → already a member
+- 500 → internal server error
 */
 
 const requestBodySchema = z.object({
-  joinCode: z.string()
+  joinCode: z.string(),
 });
 
 export const joinClassroomHandler: APIGatewayProxyHandler = async (event) => {
@@ -21,19 +39,19 @@ export const joinClassroomHandler: APIGatewayProxyHandler = async (event) => {
     if (!claims) {
       return {
         statusCode: 401,
-        body: JSON.stringify({ error: 'Unauthorized' }),
+        body: JSON.stringify({ error: "Unauthorized" }),
       };
     }
 
-    const userId = claims.sub; 
-    const studentSchoolId = claims['custom:schoolId'];  
+    const userId = claims.sub;
+    const studentSchoolId = claims["custom:schoolId"];
 
-    const body = JSON.parse(event.body || '{}');
+    const body = JSON.parse(event.body || "{}");
     const parsedBody = requestBodySchema.safeParse(body);
     if (!parsedBody.success) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Invalid request body' }),
+        body: JSON.stringify({ error: "Invalid request body" }),
       };
     }
 
@@ -43,26 +61,28 @@ export const joinClassroomHandler: APIGatewayProxyHandler = async (event) => {
     if (!classroom || classroom.joinCode !== joinCode) {
       return {
         statusCode: 403,
-        body: JSON.stringify({ error: 'Invalid join code' }),
+        body: JSON.stringify({ error: "Invalid join code" }),
       };
     }
 
-
-    // same school??
     if (!classroom.schoolId || classroom.schoolId !== studentSchoolId) {
-      return { statusCode: 403, body: JSON.stringify({ error: 'CANT_JOIN_DIFFERENT_SCHOOL' }) };
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ error: "CANT_JOIN_DIFFERENT_SCHOOL" }),
+      };
     }
 
-
-    // console.log("Classroom object:", classroom);
     const classroomID = classroom.classroomID;
 
     // Check if the user is already a member
-    const existing = await getMembershipRecord(`USER#${userId}`, `CLASSROOM#${classroomID}`);
+    const existing = await getMembershipRecord(
+      `USER#${userId}`,
+      `CLASSROOM#${classroomID}`
+    );
     if (existing) {
       return {
         statusCode: 409,
-        body: JSON.stringify({ error: 'User already joined this classroom' }),
+        body: JSON.stringify({ error: "User already joined this classroom" }),
       };
     }
 
@@ -71,30 +91,28 @@ export const joinClassroomHandler: APIGatewayProxyHandler = async (event) => {
     const membership1 = MembershipSchema.parse({
       PK: `USER#${userId}`,
       SK: `CLASSROOM#${classroomID}`,
-      role: 'student',
+      role: "student",
       joinedAt: timestamp,
     });
 
     const membership2 = MembershipSchema.parse({
       PK: `CLASSROOM#${classroomID}`,
       SK: `USER#${userId}`,
-      role: 'student',
+      role: "student",
       joinedAt: timestamp,
     });
-//     console.log("Membership1 PK:", membership1.PK);
-//     console.log("Membership1 SK:", membership1.SK);
 
     await insertMembershipRecord(membership1);
     await insertMembershipRecord(membership2);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: 'Successfully joined classroom' }),
+      body: JSON.stringify({ message: "Successfully joined classroom" }),
     };
   } catch (err: any) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message || 'Internal server error' }),
+      body: JSON.stringify({ error: err.message || "Internal server error" }),
     };
   }
 };

@@ -7,6 +7,29 @@ import { generateJoinCode } from "../../utils/other/generateJoinCode";
 import { getSchoolById } from "../../utils/database/schools/getSchoolById";
 import { putMembershipBothWays } from "../../utils/database/memberships/putMembershipBothWays";
 
+/*
+createClassroomHandler
+
+Handler for POST /classroom/create.
+Instructors use this endpoint to create a new classroom and become its first member.
+
+Flow:
+- Validate Cognito claims → must be authenticated instructor.
+- Parse request body for classroomName.
+- Resolve schoolId from user claims and fetch school record (do not trust body).
+- Build classroom record with uuid, joinCode, teacher info, timestamps.
+- Validate record against ClassroomSchema.
+- Insert classroom into DynamoDB.
+- Create bi-directional membership edges (instructor ↔ classroom).
+- Return 201 with classroomID and joinCode.
+
+Error codes:
+- 400 → invalid JSON, validation failed, missing/invalid school
+- 401 → unauthorized (no claims)
+- 403 → not an instructor
+- 500 → failed to insert classroom
+*/
+
 export const createClassroomHandler: APIGatewayProxyHandler = async (event) => {
   // Auth & role check
   const claims = (event.requestContext.authorizer as any)?.claims;

@@ -2,6 +2,25 @@ import { APIGatewayProxyHandler } from "aws-lambda";
 import { getStudentIDsByClassroom } from "../../utils/database/classrooms/fetchStudentIDs";
 import { fetchStudentInfo } from "../../utils/userpool/fetchStudentInfo";
 
+/*
+getMembersHandler
+
+Handler for POST /classroom/members.
+Returns all student members of a given classroom.
+
+Flow:
+- Validate Cognito claims → must be authenticated user.
+- Parse body to extract classroomID.
+- Query membership DB for student IDs in that classroom.
+- Fetch student profiles from Cognito for each ID.
+- Return list of members.
+
+Error codes:
+- 400 → missing classroomID in body
+- 401 → unauthorized (no claims)
+- 500 → internal error fetching members
+*/
+
 export const getMembersHandler: APIGatewayProxyHandler = async (event) => {
   console.log("Raw event.body:", event.body);
   const claims = (event.requestContext.authorizer as any)?.claims;

@@ -2,6 +2,30 @@ import { APIGatewayProxyHandler } from "aws-lambda";
 import { generateJoinCode } from "../../utils/other/generateJoinCode";
 import { getClassroomByID } from "../../utils/database/classrooms/fetchClassroomByID";
 import { updateClassroomJoinCode } from "../../utils/database/classrooms/updateClassroomJC";
+
+/*
+refreshJoinCodeHandler
+
+Handler for POST /classroom/refreshjc.
+Allows the class owner (instructor) to refresh their classroom’s join code.
+
+Flow:
+- Validate Cognito claims → must be authenticated user.
+- Parse body for classroomID (field: classId).
+- Fetch classroom by ID.
+- Verify that the requesting user is the class owner (teacherId match).
+- Generate a new join code.
+- Update classroom record in DB with new code.
+- Return the new join code.
+
+Error codes:
+- 400 → invalid JSON body or missing classroomID
+- 401 → unauthorized (no claims)
+- 403 → user is not the classroom owner
+- 404 → classroom not found
+- 500 → internal server error
+*/
+
 export const refreshJoinCodeHandler: APIGatewayProxyHandler = async (event) => {
   const claims = (event.requestContext.authorizer as any)?.claims;
   if (!claims) {

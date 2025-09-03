@@ -3,6 +3,31 @@ import { getExperimentRecord } from "../../utils/database/experiments/getExperim
 import { deleteExperiment } from "../../utils/database/experiments/deleteExperiment";
 import { deleteExperimentFile } from "../../utils/s3/s3experiments";
 import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
+/*
+deleteExperimentHandler
+
+Handler for DELETE /experiments/delete.
+Deletes an experiment record and its associated file from S3.  
+Only the owner (creator) of the experiment may perform this action.
+
+Flow:
+- Validate Cognito claims → must be authenticated user.
+- Parse and validate request body → requires classId and experimentId.
+- Fetch experiment record from DynamoDB:
+  - Return 404 if not found.
+  - Return 403 if caller is not the owner.
+- Delete experiment file from S3 using record.s3Key.
+- Delete experiment record from DynamoDB.
+- Return success response.
+
+Error codes:
+- 400 → invalid JSON or missing fields
+- 401 → unauthorized (no claims)
+- 403 → user not owner of experiment
+- 404 → experiment not found
+- 500 → S3 or DynamoDB error
+*/
+
 export const deleteExperimentHandler: APIGatewayProxyHandler = async (
   event
 ) => {
