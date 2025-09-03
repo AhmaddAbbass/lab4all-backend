@@ -90,7 +90,7 @@ async function addUsage(
   );
 }
 
-export const handler: APIGatewayProxyHandler = async (event) => {
+export const stepHandler: APIGatewayProxyHandler = async (event) => {
   try {
     // claims (same pattern you already use elsewhere)
     const claims = (event.requestContext.authorizer as any)?.claims as

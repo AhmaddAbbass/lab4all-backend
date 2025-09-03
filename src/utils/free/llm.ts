@@ -72,21 +72,12 @@ export async function llmStep(args: LlmStepArgs): Promise<LlmStepOut> {
 /* ───────────────────────── OpenAI call ───────────────────────── */
 
 async function callOpenAI(systemAndUser: { system: string; user: string }) {
-  const secretArn = process.env.LLM_SECRET_ARN!;
-  const model = process.env.LLM_MODEL_ID || "gpt-4o-mini";
-
-  const sm = new SecretsManagerClient({});
-  const sec = await sm.send(new GetSecretValueCommand({ SecretId: secretArn }));
-  const apiKey =
-    sec.SecretString && JSON.parse(sec.SecretString).OPENAI_API_KEY
-      ? JSON.parse(sec.SecretString).OPENAI_API_KEY
-      : undefined;
-
-  if (!apiKey) {
-    throw new Error("OPENAI_API_KEY missing in the specified secret");
-  }
-
-  const openai = new OpenAI({ apiKey });
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+    throw new Error("OPENAI_API_KEY not set in environment");
+    }
+    const model = process.env.LLM_MODEL_ID ?? "gpt-4o-mini";
+    const openai = new OpenAI({ apiKey });
 
   const resp = await openai.chat.completions.create({
     model,

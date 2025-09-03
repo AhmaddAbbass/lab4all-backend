@@ -27,3 +27,5 @@ export { deleteExperimentHandler } from "./handlers/experiments/delete";
 export { getExperimentInfoHandler } from "./handlers/experiments/info";
 export { toggleVisibilityExperimentHandler } from "./handlers/experiments/toggleVisibility";
 export { finishExperimentHandler } from "./handlers/experiments/finish";
+
+export { stepHandler } from "./handlers/free/step";
