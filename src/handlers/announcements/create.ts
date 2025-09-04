@@ -9,6 +9,7 @@ import { extFrom, safeName } from "../../utils/other/files";
 import { AnnouncementItem } from "../../schemas/announcements/AnnItem";
 import { insertAnnouncementRecord } from "../../utils/database/announcements/insertAnnouncement";
 import { presignPutUrl } from "../../utils/s3/s3announcements";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 /*
 createAnnouncementHandler
 
@@ -31,7 +32,6 @@ Error codes:
 - 403 → not instructor or not classroom member
 */
 
-
 export const createAnnouncementHandler: APIGatewayProxyHandler = async (
   event
 ) => {
@@ -40,6 +40,7 @@ export const createAnnouncementHandler: APIGatewayProxyHandler = async (
     if (!event.body) {
       return {
         statusCode: 400,
+        headers: DEFAULT_HEADERS,
         body: JSON.stringify({ error: "Missing request body" }),
       };
     }
@@ -50,6 +51,8 @@ export const createAnnouncementHandler: APIGatewayProxyHandler = async (
     } catch (err: any) {
       return {
         statusCode: 400,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({
           error: "Invalid input",
           details: err.errors ?? err.message,
@@ -63,6 +66,8 @@ export const createAnnouncementHandler: APIGatewayProxyHandler = async (
     if (!claims) {
       return {
         statusCode: 401,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({ error: "Unauthorized – no claims present" }),
       };
     }
@@ -74,6 +79,8 @@ export const createAnnouncementHandler: APIGatewayProxyHandler = async (
     if (userRole !== "instructor") {
       return {
         statusCode: 403,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({
           error: "Only instructors can create announcements",
         }),
@@ -86,6 +93,8 @@ export const createAnnouncementHandler: APIGatewayProxyHandler = async (
     if (!isMember) {
       return {
         statusCode: 403,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({ error: "User not a member of this classroom" }),
       };
     }
@@ -150,6 +159,8 @@ export const createAnnouncementHandler: APIGatewayProxyHandler = async (
     // 8) Return response
     return {
       statusCode: 201,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({
         announcementId,
         createdAt,
@@ -160,6 +171,8 @@ export const createAnnouncementHandler: APIGatewayProxyHandler = async (
     console.error("Error in createAnnouncementHandler:", err);
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: err.message }),
     };
   }

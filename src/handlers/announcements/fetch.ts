@@ -6,7 +6,7 @@ import { fetchAnnouncements } from "../../utils/database/announcements/queryAnno
 import { presignGetUrl } from "../../utils/s3/s3announcements"; // v2 helper
 import type { AnnouncementResponse } from "../../schemas/announcements/AnnResponse";
 import type { AnnouncementItem as AnnItem } from "../../schemas/announcements/AnnItem";
-
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 /*
 fetchAnnouncementsHandler
 
@@ -40,6 +40,8 @@ export const fetchAnnouncementsHandler: APIGatewayProxyHandler = async (
     if (!claims) {
       return {
         statusCode: 401,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({ error: "Unauthorized – no claims present" }),
       };
     }
@@ -80,6 +82,8 @@ export const fetchAnnouncementsHandler: APIGatewayProxyHandler = async (
     /* 4. Return */
     return {
       statusCode: 200,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({
         announcements,
         nextCursor: lastEvaluatedKey ?? null,
@@ -89,6 +93,8 @@ export const fetchAnnouncementsHandler: APIGatewayProxyHandler = async (
     console.error("announcements/fetch error:", err);
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: (err as Error).message }),
     };
   }
