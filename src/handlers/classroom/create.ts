@@ -6,6 +6,7 @@ import { insertClassroomRecord } from "../../utils/database/classrooms/insertCla
 import { generateJoinCode } from "../../utils/other/generateJoinCode";
 import { getSchoolById } from "../../utils/database/schools/getSchoolById";
 import { putMembershipBothWays } from "../../utils/database/memberships/putMembershipBothWays";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 
 /*
 createClassroomHandler
@@ -34,11 +35,17 @@ export const createClassroomHandler: APIGatewayProxyHandler = async (event) => {
   // Auth & role check
   const claims = (event.requestContext.authorizer as any)?.claims;
   if (!claims) {
-    return { statusCode: 401, body: JSON.stringify({ error: "Unauthorized" }) };
+    return {
+      statusCode: 401,
+      headers: DEFAULT_HEADERS,
+      body: JSON.stringify({ error: "Unauthorized" }),
+    };
   }
   if (claims["custom:role"] !== "instructor") {
     return {
       statusCode: 403,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "Only teachers can create classrooms" }),
     };
   }
@@ -50,6 +57,8 @@ export const createClassroomHandler: APIGatewayProxyHandler = async (event) => {
   } catch {
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "Invalid JSON body" }),
     };
   }
@@ -59,6 +68,8 @@ export const createClassroomHandler: APIGatewayProxyHandler = async (event) => {
   if (!schoolId) {
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "MISSING_SCHOOL_ID_ON_ACCOUNT" }),
     };
   }
@@ -66,6 +77,8 @@ export const createClassroomHandler: APIGatewayProxyHandler = async (event) => {
   if (!school) {
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "SCHOOL_NOT_FOUND" }),
     };
   }
@@ -90,6 +103,8 @@ export const createClassroomHandler: APIGatewayProxyHandler = async (event) => {
   if (!validation.success) {
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({
         error: "Validation failed",
         details: validation.error.format(),
@@ -110,6 +125,8 @@ export const createClassroomHandler: APIGatewayProxyHandler = async (event) => {
 
     return {
       statusCode: 201,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({
         message: "Classroom created",
         classroomID: validation.data.classroomID,
@@ -120,6 +137,8 @@ export const createClassroomHandler: APIGatewayProxyHandler = async (event) => {
     console.error("createClassroom error:", err);
     return {
       statusCode: 500,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "Failed to insert classroom" }),
     };
   }

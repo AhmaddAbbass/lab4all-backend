@@ -5,6 +5,7 @@ import {
   queryByCountryCity,
   searchByName,
 } from "../../utils/database/schools/fetchSchools";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 
 /*
 listSchoolsHandler
@@ -70,6 +71,8 @@ export const listSchoolsHandler: APIGatewayProxyHandler = async (event) => {
 
       return {
         statusCode: 200,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({
           schools: (res.Items || []).map(map),
           nextToken: res.LastEvaluatedKey
@@ -96,6 +99,8 @@ export const listSchoolsHandler: APIGatewayProxyHandler = async (event) => {
 
       return {
         statusCode: 200,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({
           schools: (res.Items || []).map(map),
           nextToken: res.LastEvaluatedKey
@@ -122,6 +127,8 @@ export const listSchoolsHandler: APIGatewayProxyHandler = async (event) => {
 
       return {
         statusCode: 200,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({
           schools: (res.Items || []).map(map),
           nextToken: res.LastEvaluatedKey
@@ -141,6 +148,8 @@ export const listSchoolsHandler: APIGatewayProxyHandler = async (event) => {
       );
       return {
         statusCode: 200,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({
           schools: items.map(map),
           nextToken: nt || null,
@@ -158,6 +167,8 @@ export const listSchoolsHandler: APIGatewayProxyHandler = async (event) => {
       );
       return {
         statusCode: 200,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({
           schools: items.map(map),
           nextToken: nt || null,
@@ -168,6 +179,8 @@ export const listSchoolsHandler: APIGatewayProxyHandler = async (event) => {
     // 5) City without country is ambiguous (different countries have same city names)
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({
         error: "MISSING_PARAMS",
         hint: "Provide (q), or (countryCode), or (countryCode & city). City requires countryCode.",
@@ -177,6 +190,8 @@ export const listSchoolsHandler: APIGatewayProxyHandler = async (event) => {
     console.error("listSchools error:", err);
     return {
       statusCode: 500,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "Internal Server Error" }),
     };
   }

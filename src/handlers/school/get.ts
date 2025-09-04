@@ -1,6 +1,7 @@
 // src/handlers/school/get.ts
 import { APIGatewayProxyHandler } from "aws-lambda";
 import { getSchoolById } from "../../utils/database/schools/getSchoolById";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 
 /*
 getSchoolHandler
@@ -26,6 +27,8 @@ export const getSchoolHandler: APIGatewayProxyHandler = async (event) => {
   if (!schoolId) {
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "MISSING_SCHOOL_ID" }),
     };
   }
@@ -33,12 +36,22 @@ export const getSchoolHandler: APIGatewayProxyHandler = async (event) => {
   try {
     const school = await getSchoolById(schoolId);
     if (!school) {
-      return { statusCode: 404, body: JSON.stringify({ error: "NOT_FOUND" }) };
+      return {
+        statusCode: 404,
+        headers: DEFAULT_HEADERS,
+        body: JSON.stringify({ error: "NOT_FOUND" }),
+      };
     }
-    return { statusCode: 200, body: JSON.stringify(school) };
+    return {
+      statusCode: 200,
+      headers: DEFAULT_HEADERS,
+      body: JSON.stringify(school),
+    };
   } catch (err: any) {
     return {
       statusCode: 500,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: err?.message || "Internal server error" }),
     };
   }

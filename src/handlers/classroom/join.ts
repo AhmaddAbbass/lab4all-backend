@@ -4,6 +4,7 @@ import { getClassroomByJoinCode } from "../../utils/database/classrooms/fetchCla
 import { insertMembershipRecord } from "../../utils/database/memberships/insertMembership";
 import { getMembershipRecord } from "../../utils/database/memberships/fetchMembership";
 import { MembershipSchema } from "../../schemas/membership";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 
 /*
 joinClassroomHandler
@@ -39,6 +40,8 @@ export const joinClassroomHandler: APIGatewayProxyHandler = async (event) => {
     if (!claims) {
       return {
         statusCode: 401,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({ error: "Unauthorized" }),
       };
     }
@@ -51,6 +54,8 @@ export const joinClassroomHandler: APIGatewayProxyHandler = async (event) => {
     if (!parsedBody.success) {
       return {
         statusCode: 400,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({ error: "Invalid request body" }),
       };
     }
@@ -61,6 +66,8 @@ export const joinClassroomHandler: APIGatewayProxyHandler = async (event) => {
     if (!classroom || classroom.joinCode !== joinCode) {
       return {
         statusCode: 403,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({ error: "Invalid join code" }),
       };
     }
@@ -68,6 +75,8 @@ export const joinClassroomHandler: APIGatewayProxyHandler = async (event) => {
     if (!classroom.schoolId || classroom.schoolId !== studentSchoolId) {
       return {
         statusCode: 403,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({ error: "CANT_JOIN_DIFFERENT_SCHOOL" }),
       };
     }
@@ -82,6 +91,8 @@ export const joinClassroomHandler: APIGatewayProxyHandler = async (event) => {
     if (existing) {
       return {
         statusCode: 409,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({ error: "User already joined this classroom" }),
       };
     }
@@ -107,11 +118,15 @@ export const joinClassroomHandler: APIGatewayProxyHandler = async (event) => {
 
     return {
       statusCode: 200,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ message: "Successfully joined classroom" }),
     };
   } catch (err: any) {
     return {
       statusCode: 500,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: err.message || "Internal server error" }),
     };
   }

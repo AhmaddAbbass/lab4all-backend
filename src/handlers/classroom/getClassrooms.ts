@@ -1,6 +1,7 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
 import { getClassroomIDsForUser } from "../../utils/database/classrooms/fetchClassroomIDs";
 import { getClassroomByID } from "../../utils/database/classrooms/fetchClassroomByID";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 
 /*
 getMyClassroomsHandler
@@ -25,6 +26,8 @@ export const getMyClassroomsHandler: APIGatewayProxyHandler = async (event) => {
   if (!claims) {
     return {
       statusCode: 401,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "Unauthorized" }),
     };
   }
@@ -47,11 +50,15 @@ export const getMyClassroomsHandler: APIGatewayProxyHandler = async (event) => {
 
     return {
       statusCode: 200,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify(filtered),
     };
   } catch (err: any) {
     return {
       statusCode: 500,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: err.message || "Internal server error" }),
     };
   }

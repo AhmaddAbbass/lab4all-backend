@@ -1,6 +1,8 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
 import { getMembershipRecord } from "../../utils/database/memberships/fetchMembership";
 import { removeMembershipBothWays } from "../../utils/database/memberships/removeMembershipBothWays";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
+
 /*
 kickStudentHandler
 
@@ -31,7 +33,11 @@ Error codes:
 export const kickStudentHandler: APIGatewayProxyHandler = async (event) => {
   const claims = (event.requestContext.authorizer as any)?.claims;
   if (!claims)
-    return { statusCode: 401, body: JSON.stringify({ error: "Unauthorized" }) };
+    return {
+      statusCode: 401,
+      headers: DEFAULT_HEADERS,
+      body: JSON.stringify({ error: "Unauthorized" }),
+    };
 
   let body: any = {};
   try {
@@ -41,6 +47,8 @@ export const kickStudentHandler: APIGatewayProxyHandler = async (event) => {
   if (!classroomID || !studentId)
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "MISSING_FIELDS" }),
     };
 
@@ -54,6 +62,8 @@ export const kickStudentHandler: APIGatewayProxyHandler = async (event) => {
   if (!meMember || meMember.role !== "instructor") {
     return {
       statusCode: 403,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "INSTRUCTOR_ONLY" }),
     };
   }
@@ -66,6 +76,8 @@ export const kickStudentHandler: APIGatewayProxyHandler = async (event) => {
   if (!targetMember || targetMember.role !== "student") {
     return {
       statusCode: 404,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "STUDENT_NOT_FOUND" }),
     };
   }
@@ -74,12 +86,16 @@ export const kickStudentHandler: APIGatewayProxyHandler = async (event) => {
     await removeMembershipBothWays(studentId, classroomID);
     return {
       statusCode: 200,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ message: "Student removed" }),
     };
   } catch (err) {
     console.error("kick error:", err);
     return {
       statusCode: 500,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "Internal server error" }),
     };
   }

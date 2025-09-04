@@ -4,6 +4,7 @@ import { z } from "zod";
 import { putSchool } from "../../utils/database/schools/insertSchool";
 import { toSlug } from "../../utils/other/toSlug";
 import AWS from "aws-sdk";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 
 /*
 registerSchoolHandler
@@ -55,11 +56,17 @@ export const registerSchoolHandler: APIGatewayProxyHandler = async (event) => {
   // AuthN & role gate
   const claims = (event.requestContext.authorizer as any)?.claims;
   if (!claims) {
-    return { statusCode: 401, body: JSON.stringify({ error: "Unauthorized" }) };
+    return {
+      statusCode: 401,
+      headers: DEFAULT_HEADERS,
+      body: JSON.stringify({ error: "Unauthorized" }),
+    };
   }
   if (claims["custom:role"] !== "instructor") {
     return {
       statusCode: 403,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "INSTRUCTOR_ONLY" }),
     };
   }
@@ -69,13 +76,19 @@ export const registerSchoolHandler: APIGatewayProxyHandler = async (event) => {
   try {
     body = JSON.parse(event.body || "{}");
   } catch {
-    return { statusCode: 400, body: JSON.stringify({ error: "INVALID_JSON" }) };
+    return {
+      statusCode: 400,
+      headers: DEFAULT_HEADERS,
+      body: JSON.stringify({ error: "INVALID_JSON" }),
+    };
   }
 
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({
         error: "INVALID_INPUT",
         details: parsed.error.format(),
@@ -148,6 +161,8 @@ export const registerSchoolHandler: APIGatewayProxyHandler = async (event) => {
 
     return {
       statusCode: 201,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({
         schoolId: finalSchoolId,
         name,
@@ -162,11 +177,15 @@ export const registerSchoolHandler: APIGatewayProxyHandler = async (event) => {
     if (code === "ConditionalCheckFailedException") {
       return {
         statusCode: 409,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({ error: "SCHOOL_ID_ALREADY_EXISTS" }),
       };
     }
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({
         error: err?.message || "Failed to register school",
       }),

@@ -1,6 +1,7 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
 import { getStudentIDsByClassroom } from "../../utils/database/classrooms/fetchStudentIDs";
 import { fetchStudentInfo } from "../../utils/userpool/fetchStudentInfo";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 
 /*
 getMembersHandler
@@ -27,6 +28,8 @@ export const getMembersHandler: APIGatewayProxyHandler = async (event) => {
   if (!claims) {
     return {
       statusCode: 401,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "Unauthorized" }),
     };
   }
@@ -39,6 +42,8 @@ export const getMembersHandler: APIGatewayProxyHandler = async (event) => {
   if (!classroomID) {
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "Missing classroomID in request body" }),
     };
   }
@@ -61,12 +66,16 @@ export const getMembersHandler: APIGatewayProxyHandler = async (event) => {
     const filtered = members.filter(Boolean); // Remove nulls if any failed
     return {
       statusCode: 200,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ members: filtered }),
     };
   } catch (err) {
     console.error("Error fetching members:", err);
     return {
       statusCode: 500,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "Internal Server Error" }),
     };
   }

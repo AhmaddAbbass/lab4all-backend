@@ -2,7 +2,7 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
 import AWS from "aws-sdk";
 import { z } from "zod";
-
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 /*
 confirmHandler
 
@@ -31,6 +31,8 @@ export const confirmHandler: APIGatewayProxyHandler = async (event) => {
   if (!parsed.success) {
     return {
       statusCode: 400,
+            headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({
         error: "INVALID_INPUT",
         details: parsed.error.format(),
@@ -51,11 +53,15 @@ export const confirmHandler: APIGatewayProxyHandler = async (event) => {
 
     return {
       statusCode: 200,
+            headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ message: "Account confirmed successfully" }),
     };
   } catch (err: any) {
     return {
       statusCode: 400,
+            headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: err.message || "Confirmation failed" }),
     };
   }

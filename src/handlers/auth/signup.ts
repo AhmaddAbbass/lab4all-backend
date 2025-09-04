@@ -3,6 +3,7 @@ import { APIGatewayProxyHandler } from "aws-lambda";
 import AWS from "aws-sdk";
 import { z } from "zod";
 import { resolveSchool } from "../../utils/database/schools/fetchSchools";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 
 /*
 signupHandler
@@ -49,13 +50,19 @@ export const signupHandler: APIGatewayProxyHandler = async (event) => {
   try {
     body = JSON.parse(event.body || "{}");
   } catch {
-    return { statusCode: 400, body: JSON.stringify({ error: "INVALID_JSON" }) };
+    return {
+      statusCode: 400,
+      headers: DEFAULT_HEADERS,
+      body: JSON.stringify({ error: "INVALID_JSON" }),
+    };
   }
 
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({
         error: "INVALID_INPUT",
         details: parsed.error.format(),
@@ -94,11 +101,15 @@ export const signupHandler: APIGatewayProxyHandler = async (event) => {
     if (schoolId && reason === "NOT_FOUND") {
       return {
         statusCode: 400,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({ error: "INVALID_SCHOOL_ID" }),
       };
     }
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "SCHOOL_AMBIGUOUS_OR_NOT_FOUND" }),
     };
   }
@@ -135,6 +146,8 @@ export const signupHandler: APIGatewayProxyHandler = async (event) => {
     if (isInstructor && !school) {
       return {
         statusCode: 200,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({
           ...base,
           note: "After confirming your account, please register your school so students can join.",
@@ -149,17 +162,23 @@ export const signupHandler: APIGatewayProxyHandler = async (event) => {
     if (code === "UsernameExistsException") {
       return {
         statusCode: 409,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({ error: "EMAIL_ALREADY_REGISTERED" }),
       };
     }
     if (code === "InvalidPasswordException") {
       return {
         statusCode: 400,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({ error: "WEAK_PASSWORD" }),
       };
     }
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: err?.message || "Signup failed" }),
     };
   }

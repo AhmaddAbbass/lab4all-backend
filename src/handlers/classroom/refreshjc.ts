@@ -2,6 +2,7 @@ import { APIGatewayProxyHandler } from "aws-lambda";
 import { generateJoinCode } from "../../utils/other/generateJoinCode";
 import { getClassroomByID } from "../../utils/database/classrooms/fetchClassroomByID";
 import { updateClassroomJoinCode } from "../../utils/database/classrooms/updateClassroomJC";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 
 /*
 refreshJoinCodeHandler
@@ -29,7 +30,11 @@ Error codes:
 export const refreshJoinCodeHandler: APIGatewayProxyHandler = async (event) => {
   const claims = (event.requestContext.authorizer as any)?.claims;
   if (!claims) {
-    return { statusCode: 401, body: JSON.stringify({ error: "Unauthorized" }) };
+    return {
+      statusCode: 401,
+      headers: DEFAULT_HEADERS,
+      body: JSON.stringify({ error: "Unauthorized" }),
+    };
   }
 
   let body: any;
@@ -38,6 +43,8 @@ export const refreshJoinCodeHandler: APIGatewayProxyHandler = async (event) => {
   } catch {
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "Invalid JSON body" }),
     };
   }
@@ -46,6 +53,8 @@ export const refreshJoinCodeHandler: APIGatewayProxyHandler = async (event) => {
   if (!classroomID) {
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "Missing classroomID in request body" }),
     };
   }
@@ -55,21 +64,33 @@ export const refreshJoinCodeHandler: APIGatewayProxyHandler = async (event) => {
     if (!classroom)
       return {
         statusCode: 404,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({ error: "Classroom not found" }),
       };
 
     if (classroom.teacherId !== claims.sub) {
-      return { statusCode: 403, body: JSON.stringify({ error: "Forbidden" }) };
+      return {
+        statusCode: 403,
+        headers: DEFAULT_HEADERS,
+        body: JSON.stringify({ error: "Forbidden" }),
+      };
     }
 
     const newJoinCode = generateJoinCode();
     await updateClassroomJoinCode(classroomID, newJoinCode);
 
-    return { statusCode: 200, body: JSON.stringify({ joinCode: newJoinCode }) };
+    return {
+      statusCode: 200,
+      headers: DEFAULT_HEADERS,
+      body: JSON.stringify({ joinCode: newJoinCode }),
+    };
   } catch (err) {
     console.error("Error refreshing join code:", err);
     return {
       statusCode: 500,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "Internal Server Error" }),
     };
   }

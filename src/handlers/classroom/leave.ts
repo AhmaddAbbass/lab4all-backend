@@ -3,6 +3,7 @@ import { getMembershipRecord } from "../../utils/database/memberships/fetchMembe
 import { removeMembershipBothWays } from "../../utils/database/memberships/removeMembershipBothWays";
 import { getStudentIDsByClassroom } from "../../utils/database/classrooms/fetchStudentIDs";
 import { deleteClassroomWithMembership } from "../../utils/database/classrooms/deleteClassroomWithMembership";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 
 /*
 deleteMembershipHandler
@@ -43,7 +44,11 @@ export const deleteMembershipHandler: APIGatewayProxyHandler = async (
 ) => {
   const claims = (event.requestContext.authorizer as any)?.claims;
   if (!claims)
-    return { statusCode: 401, body: JSON.stringify({ error: "Unauthorized" }) };
+    return {
+      statusCode: 401,
+      headers: DEFAULT_HEADERS,
+      body: JSON.stringify({ error: "Unauthorized" }),
+    };
 
   let body: any = {};
   try {
@@ -55,6 +60,8 @@ export const deleteMembershipHandler: APIGatewayProxyHandler = async (
   if (!classroomID)
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "MISSING_CLASSROOM_ID" }),
     };
 
@@ -68,6 +75,8 @@ export const deleteMembershipHandler: APIGatewayProxyHandler = async (
   if (!meToClass)
     return {
       statusCode: 404,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "MEMBERSHIP_NOT_FOUND" }),
     };
 
@@ -78,6 +87,8 @@ export const deleteMembershipHandler: APIGatewayProxyHandler = async (
       await removeMembershipBothWays(userId, classroomID);
       return {
         statusCode: 200,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({ message: "Left classroom" }),
       };
     }
@@ -87,6 +98,7 @@ export const deleteMembershipHandler: APIGatewayProxyHandler = async (
     if (studentIds.length > 0) {
       return {
         statusCode: 409,
+        headers: DEFAULT_HEADERS,
         body: JSON.stringify({
           error: "INSTRUCTOR_CANNOT_LEAVE_WHEN_MEMBERS_PRESENT",
         }),
@@ -97,12 +109,16 @@ export const deleteMembershipHandler: APIGatewayProxyHandler = async (
     await deleteClassroomWithMembership(userId, classroomID);
     return {
       statusCode: 200,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ message: "Classroom deleted" }),
     };
   } catch (err: any) {
     console.error("leave error:", err);
     return {
       statusCode: 500,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: "Internal server error" }),
     };
   }

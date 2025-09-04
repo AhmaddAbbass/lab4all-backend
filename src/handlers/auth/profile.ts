@@ -1,5 +1,6 @@
 // src/handlers/auth/profile.ts
 import { APIGatewayProxyHandler } from "aws-lambda";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 
 /*
 profileHandler
@@ -22,7 +23,11 @@ Error codes:
 export const profileHandler: APIGatewayProxyHandler = async (event) => {
   const claims = (event.requestContext.authorizer as any)?.claims;
   if (!claims) {
-    return { statusCode: 401, body: JSON.stringify({ error: "Unauthorized" }) };
+    return {
+      statusCode: 401,
+      headers: DEFAULT_HEADERS,
+      body: JSON.stringify({ error: "Unauthorized" }),
+    };
   }
 
   const userProfile = {
@@ -38,6 +43,8 @@ export const profileHandler: APIGatewayProxyHandler = async (event) => {
 
   return {
     statusCode: 200,
+    headers: DEFAULT_HEADERS,
+
     body: JSON.stringify(userProfile),
   };
 };

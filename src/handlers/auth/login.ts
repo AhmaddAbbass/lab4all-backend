@@ -2,6 +2,7 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
 import AWS from "aws-sdk";
 import { z } from "zod";
+import { DEFAULT_HEADERS } from "../../utils/headers/defaults";
 
 /*
 loginHandler
@@ -53,13 +54,19 @@ export const loginHandler: APIGatewayProxyHandler = async (event) => {
   try {
     body = JSON.parse(event.body || "{}");
   } catch {
-    return { statusCode: 400, body: JSON.stringify({ error: "INVALID_JSON" }) };
+    return {
+      statusCode: 400,
+      headers: DEFAULT_HEADERS,
+      body: JSON.stringify({ error: "INVALID_JSON" }),
+    };
   }
 
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({
         error: "INVALID_INPUT",
         details: parsed.error.format(),
@@ -99,6 +106,8 @@ export const loginHandler: APIGatewayProxyHandler = async (event) => {
 
     return {
       statusCode: 200,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({
         ...auth,
         ...(needsSchoolRegistration
@@ -113,30 +122,40 @@ export const loginHandler: APIGatewayProxyHandler = async (event) => {
     if (code === "NotAuthorizedException") {
       return {
         statusCode: 401,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({ error: "INVALID_CREDENTIALS" }),
       };
     }
     if (code === "UserNotConfirmedException") {
       return {
         statusCode: 403,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({ error: "USER_NOT_CONFIRMED" }),
       };
     }
     if (code === "PasswordResetRequiredException") {
       return {
         statusCode: 403,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({ error: "PASSWORD_RESET_REQUIRED" }),
       };
     }
     if (code === "UserNotFoundException") {
       return {
         statusCode: 404,
+        headers: DEFAULT_HEADERS,
+
         body: JSON.stringify({ error: "USER_NOT_FOUND" }),
       };
     }
 
     return {
       statusCode: 400,
+      headers: DEFAULT_HEADERS,
+
       body: JSON.stringify({ error: err?.message || "Login failed" }),
     };
   }
